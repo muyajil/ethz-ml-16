@@ -91,3 +91,7 @@ ENV/
 *.gz
 *.nii
 *.tar
+
+#data
+*.data
+
