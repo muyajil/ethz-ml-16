@@ -33,6 +33,7 @@ for i in range(278):
 				
 	X_train.append(X)
 	print "Finished file " + str(i+1)
+	del image
 
 print "Finished"
 print X_train.shape
