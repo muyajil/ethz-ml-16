@@ -37,7 +37,7 @@ for i in range(278):
 		X_length = len(X)
 	else:
 		if(len(X) != X_length):
-			print str(i) + ": Length mismatch!"
+			print str(i) + ": Length mismatch!" + " " + len(X) + " vs. " + X_length
 				
 	X_train.append(X)
 	print "Finished file " + str(i+1) + "; " + "%.2f" % (((i+1)/278.0) * 100) + "%"
@@ -46,5 +46,5 @@ for i in range(278):
 #print "Finished"
 #print X_train
 
-file = open('./test_data.txt', 'w+')
+file = open('./train_data.txt', 'w')
 print >> file, X_train
