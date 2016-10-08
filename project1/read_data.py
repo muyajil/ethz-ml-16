@@ -21,6 +21,8 @@ with open(targets_file, "r") as file:
 Y_train = map(int, targets)
 X_train = []
 
+first_image = nib.load(os.path.join(root_dir, train_dir, file_prefix_train + str(1) + file_suffix)).get_data()
+
 for i in range(278):
 	image = nib.load(os.path.join(root_dir, train_dir, file_prefix_train + str(i+1) + file_suffix))	
 	(height, width, depth, values) = image.shape
@@ -29,7 +31,10 @@ for i in range(278):
 	for a in range(height):
 		for b in range(width):
 			for c in range(depth):
-				if(data[a][b][c]):
+				if((first_image[a][b][c] > 0) != (data[a][b][c] > 0)):
+					print "(" + str(a) + "," + str(b) + "," + str(c) + ")" + " either not both zero or not both bigger than zero"
+					exit()
+				if(data[a][b][c] > 0):
 					X.append(data[a][b][c])
 				
 	X_train.append(X)
