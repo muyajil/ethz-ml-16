@@ -29,7 +29,8 @@ for i in range(278):
 	for a in range(height):
 		for b in range(width):
 			for c in range(depth):
-				X.append(data[a][b][c])
+				if(data[a][b][c]):
+					X.append(data[a][b][c])
 				
 	X_train.append(X)
 	#print "Finished file " + str(i+1)
