@@ -40,8 +40,11 @@ for i in range(278):
 			print str(i) + ": Length mismatch!"
 				
 	X_train.append(X)
-	#print "Finished file " + str(i+1)
+	print "Finished file " + str(i+1) + "; " + "%.2f" % (((i+1)/278.0) * 100) + "%"
 	del image
 
 #print "Finished"
-print X_train
+#print X_train
+
+file = open('./test_data.txt', 'w+')
+print >> file, X_train
