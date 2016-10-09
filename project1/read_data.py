@@ -37,7 +37,7 @@ for i in range(278):
 		X_length = len(X)
 	else:
 		if(len(X) != X_length):
-			print str(i) + ": Length mismatch!" + " " + len(X) + " vs. " + X_length
+			print str(i) + ": Length mismatch!" + " " + str(len(X)) + " vs. " + str(X_length)
 				
 	X_train.append(X)
 	print "Finished file " + str(i+1) + "; " + "%.2f" % (((i+1)/278.0) * 100) + "%"
