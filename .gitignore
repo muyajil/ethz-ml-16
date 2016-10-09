@@ -95,3 +95,5 @@ ENV/
 #data
 *.data
 
+train_data.txt
+test_data.txt
