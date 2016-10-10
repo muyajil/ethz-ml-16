@@ -1,6 +1,8 @@
 import os
 import numpy as np
 import nibabel as nib
+import cPickle
+import json
 
 root_dir = os.path.dirname(os.path.realpath(__file__))
 
@@ -24,7 +26,7 @@ X_train = []
 X_length = 0
 
 for i in range(278):
-	image = nib.load(os.path.join(root_dir, train_dir, file_prefix_train + str(i+1) + file_suffix))	
+	image = nib.load(os.path.join(root_dir, train_dir, file_prefix_train + str(i+1) + file_suffix))
 	(height, width, depth, values) = image.shape
 	data = image.get_data()
 	X = []
@@ -37,8 +39,8 @@ for i in range(278):
 		X_length = len(X)
 	else:
 		if(len(X) != X_length):
-			print str(i) + ": Length mismatch!" + " " + str(len(X)) + " vs. " + str(X_length)
-				
+			print str(i + 1) + ": Length mismatch!" + " current: " + str(len(X)) + " vs. first: " + str(X_length)
+
 	X_train.append(X)
 	print "Finished file " + str(i+1) + "; " + "%.2f" % (((i+1)/278.0) * 100) + "%"
 	del image
@@ -48,3 +50,9 @@ for i in range(278):
 
 file = open('./train_data.txt', 'w')
 print >> file, X_train
+
+with open(r"pickle_train_data.pickle", "wb") as pout_file:
+	cPickle.dump(X_train, pout_file)
+
+#with open("json_train_data.json", "wb") as jout_file:
+#	json.dump(X_train, jout_file)
