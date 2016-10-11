@@ -1,3 +1,27 @@
+'''
+Run on Euler:
+
+ssh netzID@euler.ethz.ch
+module load python/2.7.6
+
+use git to download code, scp to upload data
+
+python -m pip install --user nibabel
+bsub -n 4 -R "rusage[mem=2048, scratch=10000]" -N -W 04:00 python read_data.py
+	n: num of processor cores
+	R mem: RAM per core
+	R scratch: Disk space per core
+	N: notify when done with mail
+	W: max runtime
+
+observe jobs:
+bjobs // status of all jobs
+bbjobs JOB_ID // stats of specific job
+bkill JOB_ID // kill job
+
+Output fill be written into lsf.*
+'''
+
 import os
 import numpy as np
 import nibabel as nib
