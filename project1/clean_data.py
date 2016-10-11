@@ -8,7 +8,7 @@ matrix_test = []
 faulty_line_test = []
 
 faulty_line_train_num = 14
-faulty_line_test_num = None
+faulty_line_test_num = 19
 
 # Train data
 for elm in sPickle.s_load(open("spickle_train_data.pickle")):

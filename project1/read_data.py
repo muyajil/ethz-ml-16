@@ -28,7 +28,7 @@ import nibabel as nib
 import sPickle # -> https://github.com/pgbovine/streaming-pickle
 import sys
 
-bool_euler = True # deactivates interaction with user and just computes both test and train
+bool_euler = False # deactivates interaction with user and just computes both test and train
 debug = False  # just computes the first image of whatever set is selected
 
 def query_yes_no(question, default="no"):
@@ -131,7 +131,7 @@ for kind in kinds:
 				print kind + " " + str(i + 1) + ": Length mismatch!" + " current: " + str(len(X)) + " vs. first: " + str(X_length)
 		sPickle.s_dump_elt(X, out_file)
 
-		print "Finished file " + str(i+1) + "; " + "%.2f" % (((i+1)/float(total_datapoints)) * 100) + "%"
+		print "Finished file " + str(i+1) + "; " + "%.2f" % (((i+1 + data_points_test if kind == train else 0)/float(total_datapoints)) * 100) + "%"
 		del image
 
 	out_file.close()
