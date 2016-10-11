@@ -2,6 +2,7 @@ import os
 #import numpy as np
 import nibabel as nib
 import cPickle
+import sPickle
 #import json
 
 root_dir = os.path.dirname(os.path.realpath(__file__))
@@ -44,8 +45,7 @@ print len(X)
 #print X_train
 
 #with open(r"pickle_train_data_faulty.pickle", "wb") as pout_file:
-with open(r"pickle_test_data_faulty.pickle", "wb") as pout_file:
-	cPickle.dump(X, pout_file)
+sPickle.s_dump(X, open("spickle_test_data_faulty.pickle", "w"))
 
 #with open("json_train_data.json", "wb") as jout_file:
 #	json.dump(X_train, jout_file)
