@@ -72,8 +72,8 @@ for kind in kinds:
 		data_points = data_points_test # test
 	else:
 		print "error, not correct test/train for kind"
-	data_points = 1
-	total_datapoints = 2
+	#data_points = 1
+	#total_datapoints = 2
 
 	out_file = open("spickle_" + kind + "_data.pickle", 'w')
 
