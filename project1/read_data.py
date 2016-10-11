@@ -4,7 +4,8 @@ import nibabel as nib
 import sPickle # -> https://github.com/pgbovine/streaming-pickle
 import sys
 
-bool_euler = True
+bool_euler = False # deactivates interaction with user and just computes both test and train
+debug = False # just computes the first image of whatever set is selected
 
 def query_yes_no(question, default="no"):
     """Ask a yes/no question via raw_input() and return their answer.
@@ -60,6 +61,7 @@ if bool_euler:
 else:
 	btest = query_yes_no("Run for test set?")
 	btrain = query_yes_no("Run for train set?")
+
 if btest:
 	kinds.append("test")
 	total_datapoints += data_points_test
@@ -78,8 +80,9 @@ for kind in kinds:
 		data_points = data_points_test # test
 	else:
 		print "error, not correct test/train for kind"
-	data_points = 1
-	total_datapoints = 2
+	if debug:
+		data_points = 1
+		total_datapoints = 2
 
 	out_file = open("spickle_" + kind + "_data.pickle", 'w')
 
