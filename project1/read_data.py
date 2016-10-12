@@ -131,7 +131,7 @@ for kind in kinds:
 				print kind + " " + str(i + 1) + ": Length mismatch!" + " current: " + str(len(X)) + " vs. first: " + str(X_length)
 		sPickle.s_dump_elt(X, out_file)
 
-		print "Finished file " + str(i+1) + "; " + "%.2f" % (((i+1 + data_points_test if kind == train else 0)/float(total_datapoints)) * 100) + "%"
+		print "Finished file " + str(i+1) + "; " + "%.2f" % (((i+1)/float(total_datapoints)) * 100) + "%"
 		del image
 
 	out_file.close()
