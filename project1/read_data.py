@@ -95,6 +95,7 @@ if btrain:
 
 print "Running " + str(kinds) + " in " + ("debug" if debug else "normal") + " mode"
 
+current_number = 0
 for kind in kinds:
 	X_length = 0
 
@@ -131,7 +132,8 @@ for kind in kinds:
 				print kind + " " + str(i + 1) + ": Length mismatch!" + " current: " + str(len(X)) + " vs. first: " + str(X_length)
 		sPickle.s_dump_elt(X, out_file)
 
-		print "Finished file " + str(i+1) + "; " + "%.2f" % (((i+1)/float(total_datapoints)) * 100) + "%"
+		current_number += 1
+		print "Finished file " + str(i+1) + "; " + "%.2f" % ((current_number/float(total_datapoints)) * 100) + "%"
 		del image
 
 	out_file.close()
