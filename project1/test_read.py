@@ -1,5 +1,8 @@
 import sPickle
 
-for elm in sPickle.s_load(open('spickle_train_data.pickle')):
-    print len(elm)
-    print elm[0]
+matrix = []
+
+for elm in sPickle.s_load(open('spickle_train_data_clean.pickle')):
+    matrix.append(elm)
+
+input = input("Just to keep matrix in mem...")
