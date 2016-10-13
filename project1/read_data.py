@@ -137,3 +137,5 @@ for kind in kinds:
 		del image
 
 	out_file.close()
+
+	print "done with everything, all good."
