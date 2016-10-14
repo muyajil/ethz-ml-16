@@ -2,7 +2,6 @@ import sPickle
 import sys
 
 from numpy import genfromtxt
-
 from sklearn.linear_model import Lasso
 
 def read_train(matrix):
