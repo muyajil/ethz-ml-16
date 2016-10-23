@@ -7,6 +7,7 @@ from sklearn import grid_search
 import numpy as np
 
 def read_train():
+	print "Loading training data from file..."
     matrix = []
     i = 0
     for elm in sPickle.s_load(open("../spickle_train_data_clean.pickle")):
@@ -14,9 +15,11 @@ def read_train():
         i+=1
         if(i == test_number):
             break
+    print "Finished loading training data"
     return matrix
 
 def read_test():
+	print "Loading test data from file..."
     matrix = []
     i = 0
     for elm in sPickle.s_load(open("../spickle_test_data_clean.pickle")):
@@ -24,6 +27,7 @@ def read_test():
         i+=1
         if(i == test_number):
             break
+    print "Finished loading test data"
     return matrix
 
 def read_targets():
@@ -42,33 +46,29 @@ def generate_submission(predictions, model_name):
                 file.close()
 
 def train_and_predict(model, grid_search, model_name):
-    print "Loading training data from file..."
 
-    clean_train = read_train()
+	Y_train = read_targets()
     
-    print "Finished loading training data"
+    X_train = read_train()
 
     print "Start training..."
     
-    model.fit(clean_train, target)
+    model.fit(X_train, Y_train)
     
-    if(grid_search):
+    if grid_search:
         print 'Best score of Grid Search: ' + str(model.best_score_)
         print 'Best params of Grid Search: ' + str(model.best_params_)
     
     print "Finished training"
     del clean_train
 
-    print "Loading test data from file..."
+    X_test = read_test()
 
-    clean_test = read_test()
-
-    print "Finished loading test data"
     print "Making predictions"
 
-    predictions = model.predict(clean_test)
+    Y_test = model.predict(X_test)
     
-    generate_submission(predictions, model_name)
+    generate_submission(Y_test, model_name)
 
 # BEGIN MODELS
 
@@ -132,15 +132,19 @@ if __name__ == "__main__":
         if sys.argv[1] == models[0]:
             do_lasso(len(sys.argv) > 2 and sys.argv[2] == 'grid_search')
             exit()
+
         elif sys.argv[1] == models[1]:
             do_svm_rbf(len(sys.argv) > 2 and sys.argv[2] == 'grid_search')
             exit()
+
         elif sys.argv[1] == models[2]:
             do_svm_poly(len(sys.argv) > 2 and sys.argv[2] == 'grid_search')
             exit()
+
         elif sys.argv[1] == models[3]:
             do_ridge(len(sys.argv) > 2 and sys.argv[2] == 'grid_search')
             exit()
+            
         else:
             print "Unsupported model type"
             exit()
