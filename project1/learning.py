@@ -11,7 +11,7 @@ def read_train():
 	for elm in sPickle.s_load(open("spickle_train_data_clean.pickle")):
 		matrix.append(elm)
 		i+=1
-		if(i == 5):
+		if(i == 50):
 			break
 	return matrix
 
@@ -21,7 +21,7 @@ def read_test():
 	for elm in sPickle.s_load(open("spickle_test_data_clean.pickle")):
 		matrix.append(elm)
 		i+=1
-		if(i == 5):
+		if(i == 50):
 			break
 	return matrix
 
@@ -31,7 +31,7 @@ def read_targets():
 	with open("targets.csv", 'r') as file:
 		targets = file.read().split()
 	targets = map(int, targets)
-	return targets[:5]
+	return targets[:50]
 
 #decide for learning algorithm
 methodeid = 0
