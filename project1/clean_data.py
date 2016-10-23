@@ -38,6 +38,7 @@ print "done loading faulty line from test, now reqriting train data..."
 index = 0
 out_file = open("spickle_test_data_clean.pickle", "w")
 for elm in sPickle.s_load(open("spickle_test_data.pickle")):
+	index += 1
 	if(index == faulty_line_test_num):
 		#exchange faulty lines
 		sPickle.s_dump_elt(faulty_line_test, out_file)
