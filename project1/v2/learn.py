@@ -6,48 +6,60 @@ from sklearn import svm
 from sklearn import grid_search
 import numpy as np
 
+NUM_DATAPOINTS = -1
+MODEL_NAME = ""
+GRID_SEARCH = False
+
 def read_train():
-	print "Loading training data from file..."
+    print "Loading training data from file..."
+
     matrix = []
     i = 0
     for elm in sPickle.s_load(open("../spickle_train_data_clean.pickle")):
         matrix.append(elm)
-        i+=1
-        if(i == test_number):
+        i += 1
+        if i == NUM_DATAPOINTS:
             break
+
     print "Finished loading training data"
     return matrix
 
 def read_test():
-	print "Loading test data from file..."
+    print "Loading test data from file..."
+
     matrix = []
     i = 0
     for elm in sPickle.s_load(open("../spickle_test_data_clean.pickle")):
         matrix.append(elm)
-        i+=1
-        if(i == test_number):
+        i += 1
+        if i == NUM_DATAPOINTS:
             break
+
     print "Finished loading test data"
     return matrix
 
 def read_targets():
     targets = []
-    with open("targets.csv", 'r') as file:
+    with open("../targets.csv", 'r') as file:
         targets = file.read().split()
     targets = map(int, targets)
+
+    if NUM_DATAPOINTS > 0:
+        return targets[:NUM_DATAPOINTS]
+
     return targets
 
-def generate_submission(predictions, model_name):
-    filename = "../submission_" + model_name + ".csv"
+def generate_submission(Y_test):
+    filename = "../submission_" + MODEL_NAME + ".csv"
     with open(filename, "w") as file:
                 file.write("Id,Prediction\n")
-                for i in range(len(predictions)):
-                        file.write(str(i+1) + "," + str(int(predictions[i])) + "\n")
+                for i in range(len(Y_test)):
+                        file.write(str(i+1) + "," + str(int(Y_test[i])) + "\n")
                 file.close()
 
-def train_and_predict(model, grid_search, model_name):
+def train_and_predict(model):
 
-	Y_train = read_targets()
+    Y_train = read_targets()
     
     X_train = read_train()
 
@@ -55,12 +67,12 @@ def train_and_predict(model, grid_search, model_name):
     
     model.fit(X_train, Y_train)
     
-    if grid_search:
+    if GRID_SEARCH:
         print 'Best score of Grid Search: ' + str(model.best_score_)
         print 'Best params of Grid Search: ' + str(model.best_params_)
     
     print "Finished training"
-    del clean_train
+    del X_train
 
     X_test = read_test()
 
@@ -68,83 +80,97 @@ def train_and_predict(model, grid_search, model_name):
 
     Y_test = model.predict(X_test)
     
-    generate_submission(Y_test, model_name)
+    generate_submission(Y_test)
 
 # BEGIN MODELS
 
-def do_lasso(grid_search):
+def do_lasso():
     print "Chosen Method: LASSO"
-    
-    if grid_search:
+    MODEL_NAME = "LASSO"
+
+    if GRID_SEARCH:
         param_grid = [{'alpha':np.logspace(-3, 20, 10)}]
-        model = grid_search.GridSearchCV(Lasso(max_iter=2000), param_grid, cv=5)
+        model = grid_search.GridSearchCV(Lasso(max_iter=20000), param_grid, cv=5)
     else:
-        model = Lasso(max_iter=2000)
+        model = Lasso(max_iter=20000, alpha=129)
 
-    train_and_predict(model, grid_search, "lasso")
+    train_and_predict(model)
 
-def do_svm_rbf(grid_search):
+def do_svm_rbf():
     print "Chosen Method: SVM with RBF kernel"
+    MODEL_NAME = "SVM_RBF"
 
-    if grid_search:
+    if GRID_SEARCH:
         param_grid = [{'C':np.logspace(-3, 20, 10), 'epsilon':np.logspace(-5,3,20), 'kernel': ['rbf']}]
         model = grid_search.GridSearchCV(svm.SVR(), param_grid, cv=5)
     else:
         model = svm.SVR()
 
-    train_and_predict(model, grid_search, "svm_rbf")
+    train_and_predict(model)
 
-def do_svm_poly(grid_search):
+def do_svm_poly():
     print "Chosen Method: SVM with Poly kernel"
+    MODEL_NAME = "SVM_POLY"
 
-    if grid_search:
+    if GRID_SEARCH:
         param_grid = [{'C':[1.0, 10.0, 0.1], 'kernel': ['poly'], 'degree':[1,2,3,4,5,6]}]
         model = grid_search.GridSearchCV(svm.SVR(), param_grid, cv=5)
     else:
         model = svm.SVR()
 
-    train_and_predict(model, grid_search, "svm_poly")
+    train_and_predict(model)
 
-def do_ridge(grid_search):
-    print "Chosen Method: SVM"
+def do_ridge():
+    print "Chosen Method: RIDGE"
+    MODEL_NAME = "RIDGE"
     print "TODO"
-    #if grid_search:
+    #if GRID_SEARCH:
     #    param_grid = 
     #    model = 
     #else:
     #    model = 
 
-    #train_and_predict(model, grid_search, "ridge")
+    #train_and_predict(model)
 
 # END MODELS
 
 if __name__ == "__main__":
     models = ['lasso', 'svm_rbf', 'svm_poly', 'ridge']
     if len(sys.argv) <= 1:
-    	print ""
+        print ""
         print "You need to provide a model type"
-        print "Usage: learn.py {" + ','.join(models) + "} [grid_search]"
+        print "Usage: learn.py {" + ','.join(models) + "} {grid_search, no_grid_search} [num_datapoints]"
         print "{...}: Choose one of the possibilities"
         print "[...]: Either use this param or not"
         print ""
         exit()
     else:
+        if len(sys.argv) > 2:
+            GRID_SEARCH = sys.argv[2] == 'grid_search'
+
+        if len(sys.argv) > 3:
+            NUM_DATAPOINTS = int(sys.argv[3])
+
         if sys.argv[1] == models[0]:
-            do_lasso(len(sys.argv) > 2 and sys.argv[2] == 'grid_search')
+            MODEL_NAME = models[0]
+            do_lasso()
             exit()
 
         elif sys.argv[1] == models[1]:
-            do_svm_rbf(len(sys.argv) > 2 and sys.argv[2] == 'grid_search')
+            MODEL_NAME = models[1]
+            do_svm_rbf()
             exit()
 
         elif sys.argv[1] == models[2]:
-            do_svm_poly(len(sys.argv) > 2 and sys.argv[2] == 'grid_search')
+            MODEL_NAME = models[2]
+            do_svm_poly()
             exit()
 
         elif sys.argv[1] == models[3]:
-            do_ridge(len(sys.argv) > 2 and sys.argv[2] == 'grid_search')
+            MODEL_NAME = models[3]
+            do_ridge()
             exit()
-            
+
         else:
             print "Unsupported model type"
             exit()
