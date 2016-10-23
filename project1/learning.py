@@ -79,7 +79,7 @@ if methodeid == 1: # LASSO
 	#print "Cross validation scores"
 	#print scores
 	print "done training"
-	#del clean_train
+	del clean_train
 	print "reading test data"
 	clean_test = read_test()
 	print "finished reading test data"
@@ -88,7 +88,7 @@ if methodeid == 1: # LASSO
 	with open("prediction_lasso.csv", "w") as file:
 		file.write("Id,Prediction\n")
 		for i in range(len(predictions)):
-			file.write(str(i) + "," + str(int(predictions[i])) + "\n")
+			file.write(str(i + 1) + "," + str(int(predictions[i])) + "\n")
 		file.close()
 
 
@@ -115,10 +115,10 @@ elif methodeid == 3: #SVM
         print "finished reading test data"
         print "making predictions"
         predictions = gs.predict(clean_test)
-        with open("prediction_lasso.csv", "w") as file:
+        with open("prediction_svm.csv", "w") as file:
                 file.write("Id,Prediction\n")
                 for i in range(len(predictions)):
-                        file.write(str(i) + "," + str(int(predictions[i])) + "\n")
+                        file.write(str(i + 1) + "," + str(int(predictions[i])) + "\n")
                 file.close()
 
 
