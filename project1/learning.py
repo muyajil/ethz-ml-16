@@ -5,13 +5,14 @@ from numpy import genfromtxt
 from sklearn.linear_model import Lasso
 from sklearn.model_selection import cross_val_score
 
+test_number = 50
 def read_train():
 	matrix = []
 	i = 0
 	for elm in sPickle.s_load(open("spickle_train_data_clean.pickle")):
 		matrix.append(elm)
 		i+=1
-		if(i == 5):
+		if(i == test_number):
 			break
 	return matrix
 
@@ -21,7 +22,7 @@ def read_test():
 	for elm in sPickle.s_load(open("spickle_test_data_clean.pickle")):
 		matrix.append(elm)
 		i+=1
-		if(i == 5):
+		if(i == test_number):
 			break
 	return matrix
 
@@ -31,7 +32,7 @@ def read_targets():
 	with open("targets.csv", 'r') as file:
 		targets = file.read().split()
 	targets = map(int, targets)
-	return targets[:5]
+	return targets[:test_number]
 
 #decide for learning algorithm
 methodeid = 0
