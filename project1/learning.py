@@ -4,6 +4,7 @@ import sys
 from numpy import genfromtxt
 from sklearn.linear_model import Lasso
 from sklearn.linear_model import LassoCV
+from sklearn import svm
 from sklearn.model_selection import cross_val_score
 from sklearn import grid_search
 import numpy as np
@@ -45,7 +46,8 @@ def read_targets():
 methodeid = 0
 methodes = {
 	"lasso": 1,
-	"ridge": 2
+	"ridge": 2,
+        "svm": 3
 }
 while True:
 	sys.stdout.write("Available learning methodes: \n" + str(methodes.keys()))
@@ -93,5 +95,32 @@ if methodeid == 1: # LASSO
 elif methodeid == 2: # RIDGE
 	print "TODO"
 	exit()
+
+elif methodeid == 3: #SVM
+        print "Chosen Method: SVM\nStarting by reading in data..."
+
+        #read in data
+        clean_train = read_train()
+        print "load clean train done"
+        param_grid = [{'C':np.logspace(-3, 20, 10), 'epsilon':np.logspace(-5,3,20), 'kernel': ['rbf']}]
+        model = svm.SVR()
+        print "started training"
+        gs = grid_search.GridSearchCV(model, param_grid, cv=5)
+        gs.fit(clean_train, target)
+        print 'Best score of Grid Search: ' + str(gs.best_score_)
+        print 'Best params of Grid Search: ' + str(gs.best_params_)
+        print "done training"
+        print "reading test data"
+        clean_test = read_test()
+        print "finished reading test data"
+        print "making predictions"
+        predictions = gs.predict(clean_test)
+        with open("prediction_lasso.csv", "w") as file:
+                file.write("Id,Prediction\n")
+                for i in range(len(predictions)):
+                        file.write(str(i) + "," + str(int(predictions[i])) + "\n")
+                file.close()
+
+
 else:
 	print "invalid methode id, do nothing and exit"
