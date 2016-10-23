@@ -47,7 +47,8 @@ methodeid = 0
 methodes = {
 	"lasso": 1,
 	"ridge": 2,
-        "svm": 3
+        "svm-rbf": 3,
+        "svm-poly":4
 }
 while True:
 	sys.stdout.write("Available learning methodes: \n" + str(methodes.keys()))
@@ -96,7 +97,7 @@ elif methodeid == 2: # RIDGE
 	print "TODO"
 	exit()
 
-elif methodeid == 3: #SVM
+elif methodeid == 3: #SVM-rbf
         print "Chosen Method: SVM\nStarting by reading in data..."
 
         #read in data
@@ -121,6 +122,30 @@ elif methodeid == 3: #SVM
                         file.write(str(i + 1) + "," + str(int(predictions[i])) + "\n")
                 file.close()
 
+elif methodeid == 4: #SVM-poly
+        print "Chosen Method: SVM\nStarting by reading in data..."
+
+        #read in data
+        clean_train = read_train()
+        print "load clean train done"
+        param_grid = [{'C':[1.0, 10.0, 0.1], 'kernel': ['poly'], 'degree':[1,2,3,4,5,6]}]
+        model = svm.SVR()
+        print "started training"
+        gs = grid_search.GridSearchCV(model, param_grid, cv=5)
+        gs.fit(clean_train, target)
+        print 'Best score of Grid Search: ' + str(gs.best_score_)
+        print 'Best params of Grid Search: ' + str(gs.best_params_)
+        print "done training"
+        print "reading test data"
+        clean_test = read_test()
+        print "finished reading test data"
+        print "making predictions"
+        predictions = gs.predict(clean_test)
+        with open("prediction_svm.csv", "w") as file:
+                file.write("Id,Prediction\n")
+                for i in range(len(predictions)):
+                        file.write(str(i + 1) + "," + str(int(predictions[i])) + "\n")
+                file.close()
 
 else:
 	print "invalid methode id, do nothing and exit"
