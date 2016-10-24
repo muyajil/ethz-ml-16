@@ -101,7 +101,7 @@ def do_svm_rbf():
     MODEL_NAME = "SVM_RBF"
 
     if GRID_SEARCH:
-        param_grid = [{'C':np.logspace(-3, 20, 10), 'epsilon':np.logspace(-5,3,20), 'kernel': ['rbf']}]
+        param_grid = [{'C':[1.0, 10.0],  'epsilon':[0.01, 0.1, 1], 'kernel': ['rbf']}]
         model = grid_search.GridSearchCV(svm.SVR(), param_grid, cv=5)
     else:
         model = svm.SVR()
