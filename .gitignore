@@ -99,3 +99,4 @@ ENV/
 !requirements.txt
 *.pickle
 .idea/*
+*.csv
