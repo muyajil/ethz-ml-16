@@ -1,13 +1,13 @@
 '''
 Run on Euler:
 
-ssh netzID@euler.ethz.ch
-module load python/2.7.6
+>>ssh netzID@euler.ethz.ch
+>>module load python/2.7.6
 
 use git to download code, scp to upload data
 
-python -m pip install --user nibabel
-bsub -n 4 -R "rusage[mem=2048, scratch=10000]" -N -W 04:00 python read_data.py
+>>python -m pip install --user nibabel
+>>bsub -n 4 -R "rusage[mem=2048, scratch=10000]" -N -W 04:00 python read_data.py
 	-n: num of processor cores
 	-R mem: RAM per core
 	-R scratch: Disk space per core
@@ -15,9 +15,9 @@ bsub -n 4 -R "rusage[mem=2048, scratch=10000]" -N -W 04:00 python read_data.py
 	-W: max runtime
 
 observe jobs:
-bjobs // status of all jobs
-bbjobs JOB_ID // stats of specific job
-bkill JOB_ID // kill job
+>>bjobs // status of all jobs
+>>bbjobs JOB_ID // stats of specific job
+>>bkill JOB_ID // kill job
 
 Output fill be written into lsf.*
 '''
@@ -29,7 +29,7 @@ import sPickle # -> https://github.com/pgbovine/streaming-pickle
 import sys
 
 bool_euler = False # deactivates interaction with user and just computes both test and train
-debug = False  # just computes the first image of whatever set is selected
+debug = True  # just computes the first image of whatever set is selected
 
 def query_yes_no(question, default="no"):
     """Ask a yes/no question via raw_input() and return their answer.
