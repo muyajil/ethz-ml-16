@@ -5,7 +5,7 @@ import sPickle # -> https://github.com/pgbovine/streaming-pickle
 import sys
 
 bool_euler = False # deactivates interaction with user and just computes both test and train
-debug = True  # just computes the first image of whatever set is selected
+debug = False  # just computes the first image of whatever set is selected
 number_test_images = 1
 
 modes = ["avg", "vector"]

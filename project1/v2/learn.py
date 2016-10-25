@@ -15,7 +15,7 @@ def read_train():
 
     matrix = []
     i = 0
-    for elm in sPickle.s_load(open("../spickle_train_data_clean.pickle")):
+    for elm in sPickle.s_load(open("spickle_train_avg_data_clean.pickle")):
         matrix.append(elm)
         i += 1
         if i == NUM_DATAPOINTS:
@@ -29,7 +29,7 @@ def read_test():
 
     matrix = []
     i = 0
-    for elm in sPickle.s_load(open("../spickle_test_data_clean.pickle")):
+    for elm in sPickle.s_load(open("spickle_test_avg_data_clean.pickle")):
         matrix.append(elm)
         i += 1
         if i == NUM_DATAPOINTS:
