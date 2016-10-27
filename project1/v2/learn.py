@@ -99,7 +99,7 @@ def do_lasso():
     MODEL_NAME = "LASSO"
 
     if GRID_SEARCH:
-        param_grid = [{'alpha':np.linspace(1, 100, 20)}]
+        param_grid = [{'alpha':[1]}]
         model = grid_search.GridSearchCV(Lasso(max_iter=20000), param_grid, cv=5, verbose=5)
     else:
         model = Lasso(max_iter=20000)
