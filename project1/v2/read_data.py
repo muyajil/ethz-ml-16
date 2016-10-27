@@ -5,10 +5,10 @@ import sPickle # -> https://github.com/pgbovine/streaming-pickle
 import sys
 
 bool_euler = False # deactivates interaction with user and just computes both test and train
-debug = False  # just computes the first image of whatever set is selected
+debug = True  # just computes the first image of whatever set is selected
 number_test_images = 1
 
-modes = ["avg", "vector"]
+modes = ["avg", "vector", "grad"]
 mode = ""
 
 root_dir = os.path.dirname(os.path.realpath(__file__ + "/../"))
@@ -113,11 +113,12 @@ def extract_data(kind, current_number, total_datapoints):
 		
 		X_matrix = process_img(image)
 		
-
 		if mode == "avg":
 			X = [sum(elm) / float(len(elm)) for elm in X_matrix]
 		elif mode == "vector":
 			X = [item for sublist in X_matrix for item in sublist]
+		elif mode == "grad":
+			## TODO
 		else:
 			print "unexpected error: unsupported mode. exiting.."
 			exit()
@@ -132,6 +133,8 @@ def extract_data(kind, current_number, total_datapoints):
 					X = [sum(elm) / float(len(elm)) for elm in X_matrix]
 				elif mode == "vector":
 					X = [item for sublist in X_matrix for item in sublist]
+				elif mode == "grad":
+					## TODO
 				else:
 					print "unexpecter error: unsupported mode. exiting.."
 
