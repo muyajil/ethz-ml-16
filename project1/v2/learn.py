@@ -10,34 +10,39 @@ import numpy as np
 NUM_DATAPOINTS = -1
 MODEL_NAME = ""
 GRID_SEARCH = False
+FILE_NAME = ""
 
-def read_train():
-    print "Loading training data from file..."
+MAX_VALUE = 0
+
+def generate_histogram(matrix):
+    global MAX_VALUE
+    histogram_matrix = []
+    for datapoint in matrix:
+        histogram = [0]*(MAX_VALUE+1)
+        for feature in datapoint:
+            histogram[int(feature)] += 1
+        histogram_matrix.append(histogram)
+    return histogram_matrix
+
+def read_data(filename):
+    global MAX_VALUE
+    print "Loading " + filename + "..."
 
     matrix = []
     i = 0
-    for elm in sPickle.s_load(open("spickle_train_avg_data_clean.pickle")):
+    for elm in sPickle.s_load(open(filename)):
+        max_elem = max(elm)
+        if(max_elem > MAX_VALUE):
+            MAX_VALUE = max_elem
         matrix.append(elm)
         i += 1
         if i == NUM_DATAPOINTS:
             break
 
-    print "Finished loading training data"
-    return matrix
+    histogram_matrix = generate_histogram(matrix)
 
-def read_test():
-    print "Loading test data from file..."
-
-    matrix = []
-    i = 0
-    for elm in sPickle.s_load(open("spickle_test_avg_data_clean.pickle")):
-        matrix.append(elm)
-        i += 1
-        if i == NUM_DATAPOINTS:
-            break
-
-    print "Finished loading test data"
-    return matrix
+    print "Finished loading " + filename
+    return histogram_matrix
 
 def read_targets():
     targets = []
@@ -59,10 +64,12 @@ def generate_submission(Y_test):
                 file.close()
 
 def train_and_predict(model):
-
+    global MAX_VALUE
     Y_train = read_targets()
     
-    X_train = read_train()
+    X_train = read_data(FILE_NAME + "_train.pickle")
+
+    print "Max Value Train: " + str(MAX_VALUE);
 
     print "Start training..."
     
@@ -74,8 +81,10 @@ def train_and_predict(model):
     
     print "Finished training"
     del X_train
+    
+    X_test = read_data(FILE_NAME + "_test.pickle")
 
-    X_test = read_test()
+    print "Max Value Train: " + str(MAX_VALUE);
 
     print "Making predictions"
 
@@ -90,10 +99,10 @@ def do_lasso():
     MODEL_NAME = "LASSO"
 
     if GRID_SEARCH:
-        param_grid = [{'alpha':np.linspace(120, 140, 20)}]
-        model = grid_search.GridSearchCV(Lasso(max_iter=20000), param_grid, cv=5, verbose=8)
+        param_grid = [{'alpha':np.linspace(1, 100, 20)}]
+        model = grid_search.GridSearchCV(Lasso(max_iter=20000), param_grid, cv=5, verbose=5)
     else:
-        model = Lasso(max_iter=20000, alpha=129)
+        model = Lasso(max_iter=20000)
 
     train_and_predict(model)
 
@@ -147,7 +156,7 @@ def do_ridge_poly():
 
 def print_usage():
     print ""
-    print "Usage: learn.py {" + ','.join(models) + "} {grid_search, no_grid_search} [num_datapoints]"
+    print "Usage: learn.py {" + ','.join(models) + "} {grid_search, no_grid_search} input_file_name [num_datapoints]"
     print "{...}: Choose one of the possibilities"
     print "[...]: Either use this param or not"
     print ""
@@ -163,7 +172,10 @@ if __name__ == "__main__":
             GRID_SEARCH = sys.argv[2] == 'grid_search'
 
         if len(sys.argv) > 3:
-            NUM_DATAPOINTS = int(sys.argv[3])
+            FILE_NAME = sys.argv[3]
+
+        if len(sys.argv) > 4:
+            NUM_DATAPOINTS = int(sys.argv[4])
 
         if sys.argv[1] == models[0]:
             MODEL_NAME = models[0]
