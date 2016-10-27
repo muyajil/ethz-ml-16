@@ -84,7 +84,7 @@ def train_and_predict(model):
     
     X_test = read_data(FILE_NAME + "_test.pickle")
 
-    print "Max Value Train: " + str(MAX_VALUE);
+    print "Max Value Test: " + str(MAX_VALUE);
 
     print "Making predictions"
 
@@ -95,6 +95,7 @@ def train_and_predict(model):
 # BEGIN MODELS
 
 def do_lasso():
+    global MODEL_NAME
     print "Chosen Method: LASSO"
     MODEL_NAME = "LASSO"
 
@@ -107,6 +108,7 @@ def do_lasso():
     train_and_predict(model)
 
 def do_svm_rbf():
+    global MODEL_NAME
     print "Chosen Method: SVM with RBF kernel"
     MODEL_NAME = "SVM_RBF"
 
@@ -119,6 +121,7 @@ def do_svm_rbf():
     train_and_predict(model)
 
 def do_svm_poly():
+    global MODEL_NAME
     print "Chosen Method: SVM with Poly kernel"
     MODEL_NAME = "SVM_POLY"
 
@@ -131,6 +134,7 @@ def do_svm_poly():
     train_and_predict(model)
 
 def do_ridge_rbf():
+    global MODEL_NAME
     print "Chosen Method: RIDGE with RBF kernel"
     MODEL_NAME = "RIDGE_RBF"
     if GRID_SEARCH:
@@ -142,6 +146,7 @@ def do_ridge_rbf():
     train_and_predict(model)
 
 def do_ridge_poly():
+    global MODEL_NAME
     print "Chosen Method: RIDGE with Poly kernel"
     MODEL_NAME = "RIDGE_POLY"
     if GRID_SEARCH:
@@ -177,32 +182,11 @@ if __name__ == "__main__":
         if len(sys.argv) > 4:
             NUM_DATAPOINTS = int(sys.argv[4])
 
-        if sys.argv[1] == models[0]:
-            MODEL_NAME = models[0]
-            do_lasso()
+        if sys.argv[1] in models:
+            globals()["do_"+sys.argv[1]]()
             exit()
-
-        elif sys.argv[1] == models[1]:
-            MODEL_NAME = models[1]
-            do_svm_rbf()
-            exit()
-
-        elif sys.argv[1] == models[2]:
-            MODEL_NAME = models[2]
-            do_svm_poly()
-            exit()
-
-        elif sys.argv[1] == models[3]:
-            MODEL_NAME = models[3]
-            do_ridge_rbf()
-            exit()
-
-        elif sys.argv[1] == models[4]:
-            MODEL_NAME = models[4]
-            do_ridge_poly()
-            exit()
-
         else:
             print "Unsupported model type"
             print_usage()
             exit()
+            
