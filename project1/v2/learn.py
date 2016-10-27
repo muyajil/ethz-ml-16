@@ -2,7 +2,7 @@ import sPickle
 import sys
 
 from sklearn.linear_model import Lasso
-from sklearn.linear_model import KernelRidge
+from sklearn.kernel_ridge import KernelRidge
 from sklearn.svm import SVR
 from sklearn import grid_search
 import numpy as np
@@ -90,7 +90,7 @@ def do_lasso():
     MODEL_NAME = "LASSO"
 
     if GRID_SEARCH:
-        param_grid = [{'alpha':np.logspace(-3, 20, 10)}]
+        param_grid = [{'alpha':np.linspace(100, 150, 10)}]
         model = grid_search.GridSearchCV(Lasso(max_iter=20000), param_grid, cv=5)
     else:
         model = Lasso(max_iter=20000, alpha=129)
