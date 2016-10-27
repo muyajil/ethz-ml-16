@@ -99,7 +99,7 @@ def process_faulty_img(img):
 	del [data, data_correct, image_correct]
 	return X			
 
-def extract_data(kind, current_number, total_datapoints):
+def extract_data(kind, current_number, total_datapoints, histogram=True):
 	X_length = 0
 
 	if kind == "train":
@@ -112,6 +112,7 @@ def extract_data(kind, current_number, total_datapoints):
 		image_num = number_test_images
 
 	out_file = open(mode + "_" + kind + ".pickle", 'w')
+	X_histogram = [0] * 10000
 
 	for i in range(image_num):
 		if kind == "train":
@@ -143,10 +144,12 @@ def extract_data(kind, current_number, total_datapoints):
 				elif mode == "vector":
 					X = [elm for matrix in X_3d for vec in matrix for elm in vec]
 				elif mode == "grad":
-					## TODO
-					exit()
+					exit(5)
 				else:
 					print "unexpecter error: unsupported mode. exiting.."
+
+		for elm in X:
+			X_histogram[int(elm)] += 1
 
 		sPickle.s_dump_elt(X, out_file)
 
@@ -155,6 +158,10 @@ def extract_data(kind, current_number, total_datapoints):
 		del image
 
 	out_file.close()
+
+	out_file = open(mode + "_" + kind + "_histogram.pickle", 'w')
+	out_file.s_dump(X_histogram, out_file)
+
 	return current_number
 
 
