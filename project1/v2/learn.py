@@ -2,6 +2,7 @@ import sPickle
 import sys
 
 from sklearn.linear_model import Lasso
+from sklearn.linear_model import KernelRidge
 from sklearn import svm
 from sklearn import grid_search
 import numpy as np
@@ -120,29 +121,42 @@ def do_svm_poly():
 
     train_and_predict(model)
 
-def do_ridge():
-    print "Chosen Method: RIDGE"
-    MODEL_NAME = "RIDGE"
-    print "TODO"
-    #if GRID_SEARCH:
-    #    param_grid = 
-    #    model = 
-    #else:
-    #    model = 
+def do_ridge_rbf():
+    print "Chosen Method: RIDGE with RBF kernel"
+    MODEL_NAME = "RIDGE_RBF"
+    if GRID_SEARCH:
+        param_grid = [{'alpha':[1.0, 10.0],  'gamma':[0.01, 0.1, 1], 'kernel': ['rbf']}]
+        model = grid_search.GridSearchCV(KernelRidge(), param_grid, cv=5)
+    else:
+        model = KernelRidge(alpha=10, kernel='rbf', gamma='0.1')
 
-    #train_and_predict(model)
+    train_and_predict(model)
+
+def do_ridge_poly():
+    print "Chosen Method: RIDGE with Poly kernel"
+    MODEL_NAME = "RIDGE_POLY"
+    if GRID_SEARCH:
+        param_grid = [{'alpha':[1.0, 10.0, 0.1], 'kernel': ['poly'], 'degree':[1,2,3,4,5,6]}]
+        model = grid_search.GridSearchCV(KernelRidge(), param_grid, cv=5)
+    else:
+        model = KernelRidge(alpha=10, kernel='poly', degree='5')
+
+    train_and_predict(model)
 
 # END MODELS
 
+def print_usage():
+    print ""
+    print "Usage: learn.py {" + ','.join(models) + "} {grid_search, no_grid_search} [num_datapoints]"
+    print "{...}: Choose one of the possibilities"
+    print "[...]: Either use this param or not"
+    print ""
+
 if __name__ == "__main__":
-    models = ['lasso', 'svm_rbf', 'svm_poly', 'ridge']
+    models = ['lasso', 'svm_rbf', 'svm_poly', 'ridge_rbf', 'ridge_poly']
     if len(sys.argv) <= 1:
-        print ""
         print "You need to provide a model type"
-        print "Usage: learn.py {" + ','.join(models) + "} {grid_search, no_grid_search} [num_datapoints]"
-        print "{...}: Choose one of the possibilities"
-        print "[...]: Either use this param or not"
-        print ""
+        print_usage()
         exit()
     else:
         if len(sys.argv) > 2:
@@ -168,9 +182,15 @@ if __name__ == "__main__":
 
         elif sys.argv[1] == models[3]:
             MODEL_NAME = models[3]
-            do_ridge()
+            do_ridge_rbf()
+            exit()
+
+        elif sys.argv[1] == models[4]:
+            MODEL_NAME = models[4]
+            do_ridge_poly()
             exit()
 
         else:
             print "Unsupported model type"
+            print_usage()
             exit()
