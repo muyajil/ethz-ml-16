@@ -90,8 +90,8 @@ def do_lasso():
     MODEL_NAME = "LASSO"
 
     if GRID_SEARCH:
-        param_grid = [{'alpha':np.linspace(100, 120, 20)}]
-        model = grid_search.GridSearchCV(Lasso(max_iter=20000), param_grid, cv=5, verbose=10)
+        param_grid = [{'alpha':np.linspace(120, 140, 20)}]
+        model = grid_search.GridSearchCV(Lasso(max_iter=20000), param_grid, cv=5, verbose=8)
     else:
         model = Lasso(max_iter=20000, alpha=129)
 
