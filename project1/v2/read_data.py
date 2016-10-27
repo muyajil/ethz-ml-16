@@ -58,36 +58,42 @@ def query_yes_no(question, default="no"):
         else:
             sys.stdout.write("Please respond with 'yes' or 'no' "
                              "(or 'y' or 'n').\n")
-def process_img(img):
+
+def process_img(img, filtered):
 	(height, width, depth, values) = img.shape
 	data = img.get_data()
-	X = []
+	X_3d = []
 	for a in range(height):
+		X_2d = []
 		for b in range(width):
-			c_vec = [num for sub in data[a][b] for num in sub]
-			c = filter(lambda a: a != 0, c_vec)
-			if len(c) > 0:
-				X.append(c)
+			X_1d = [num for sub in data[a][b] for num in sub]
+			if filtered:
+				X_1d = filter(lambda a: a != 0, X_1d)
+			if len(X_1d) > 0:
+				X_2d.append(X_1d)
+		X_3d.append(X_2d)
 	del data
-	return X
+	return X_3d
 
 def process_faulty_img(img):
 	image_correct = nib.load(os.path.join(root_dir, train_dir, file_prefix_train + str(1) + file_suffix))
 	(height, width, depth, values) = image_correct.shape
 	data = img.get_data()
 	data_correct = image_correct.get_data()
-	X = []
+	X_3d = []
 	for a in range(height):
+		X_2d = []
 		for b in range(width):
-			c_vec = [num for sub in data[a][b] for num in sub]
+			X_1d = [num for sub in data[a][b] for num in sub]
 			c_vec_correct = [num for sub in data_correct[a][b] for num in sub]
 			c_bool_correct = map(bool, c_vec_correct)
 			c_bitmask_correct = map(int, c_bool_correct)
-			c_vec = [m+n for (m,n) in zip(c_vec, c_bitmask_correct)]
-			c_filtered = filter(lambda k: k != 0, c_vec)
-			c = map(lambda o: o-1, c_filtered)
-			if len(c) > 0:
-				X.append(c)
+			X_1d = [m+n for (m,n) in zip(X_1d, c_bitmask_correct)]
+			X_1d_filtered = filter(lambda k: k != 0, X_1d)
+			X_1d_final = map(lambda o: o-1, X_1d_filtered)
+			if len(X_1d_final) > 0:
+				X_2d.append(X_1d_final)
+		X_3d.append(X_2d)
 	del [data, data_correct, image_correct]
 	return X			
 
@@ -103,7 +109,7 @@ def extract_data(kind, current_number, total_datapoints):
 	if debug:
 		image_num = number_test_images
 
-	out_file = open("spickle_" + kind + "_" + mode + "_data_clean.pickle", 'w')
+	out_file = open(mode + "_" + kind + ".pickle", 'w')
 
 	for i in range(image_num):
 		if kind == "train":
@@ -111,14 +117,15 @@ def extract_data(kind, current_number, total_datapoints):
 		elif kind == "test":
 			image = nib.load(os.path.join(root_dir, test_dir, file_prefix_test + str(i+1) + file_suffix))
 		
-		X_matrix = process_img(image)
-		
 		if mode == "avg":
-			X = [sum(elm) / float(len(elm)) for elm in X_matrix]
+			X_3d = process_img(image, True)
+			X = [(sum(vec) / float(len(vec))) for matrix in X_3d for vec in matrix]
 		elif mode == "vector":
-			X = [item for sublist in X_matrix for item in sublist]
+			X_3d = process_img(image, True)
+			X = [elm for matrix in X_3d for vec in matrix for elm in vec]
 		elif mode == "grad":
 			## TODO
+			exit()
 		else:
 			print "unexpected error: unsupported mode. exiting.."
 			exit()
@@ -128,13 +135,14 @@ def extract_data(kind, current_number, total_datapoints):
 			X_length = len(X)
 		else:
 			if(len(X) != X_length):
-				X_matrix = process_faulty_img(image)
+				X_3d = process_faulty_img(image)
 				if mode == "avg":
-					X = [sum(elm) / float(len(elm)) for elm in X_matrix]
+					X = [(sum(vec) / float(len(vec))) for matrix in X_3d for vec in matrix]
 				elif mode == "vector":
-					X = [item for sublist in X_matrix for item in sublist]
+					X = [elm for matrix in X_3d for vec in matrix for elm in vec]
 				elif mode == "grad":
 					## TODO
+					exit()
 				else:
 					print "unexpecter error: unsupported mode. exiting.."
 
