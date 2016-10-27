@@ -1,3 +1,9 @@
+"""
+To implement a new model:
+1. create function do_modelname
+2. add modelname to models
+"""
+
 import sPickle
 import sys
 
@@ -100,7 +106,7 @@ def do_lasso():
     MODEL_NAME = "LASSO"
 
     if GRID_SEARCH:
-        param_grid = [{'alpha':[1]}]
+        param_grid = [{'alpha':np.logspace(-3, 3, 10)}]
         model = grid_search.GridSearchCV(Lasso(max_iter=20000), param_grid, cv=5, verbose=5)
     else:
         model = Lasso(max_iter=20000)
