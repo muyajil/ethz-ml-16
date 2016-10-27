@@ -71,7 +71,8 @@ def process_img(img, filtered):
 				X_1d = filter(lambda a: a != 0, X_1d)
 			if len(X_1d) > 0:
 				X_2d.append(X_1d)
-		X_3d.append(X_2d)
+		if len(X_2d) > 0:
+			X_3d.append(X_2d)
 	del data
 	return X_3d
 
@@ -93,7 +94,8 @@ def process_faulty_img(img):
 			X_1d_final = map(lambda o: o-1, X_1d_filtered)
 			if len(X_1d_final) > 0:
 				X_2d.append(X_1d_final)
-		X_3d.append(X_2d)
+		if len(X_2d) > 0:
+			X_3d.append(X_2d)
 	del [data, data_correct, image_correct]
 	return X			
 
