@@ -127,7 +127,14 @@ def extract_data(kind, current_number, total_datapoints):
 			X_length = len(X)
 		else:
 			if(len(X) != X_length):
-				X = process_faulty_img(image)
+				X_matrix = process_faulty_img(image)
+				if mode == "avg":
+					X = [sum(elm) / float(len(elm)) for elm in X_matrix]
+				elif mode == "vector":
+					X = [item for sublist in X_matrix for item in sublist]
+				else:
+					print "unexpecter error: unsupported mode. exiting.."
+
 		sPickle.s_dump_elt(X, out_file)
 
 		current_number += 1
