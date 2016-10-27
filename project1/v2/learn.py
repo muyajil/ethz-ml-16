@@ -2,7 +2,7 @@ import sPickle
 import sys
 
 from sklearn.linear_model import Lasso
-from sklearn.linear_model import KernelRidge
+from sklearn.kernel_ridge import KernelRidge
 from sklearn.svm import SVR
 from sklearn import grid_search
 import numpy as np
