@@ -46,6 +46,10 @@ def read_data(filename):
             break
 
     histogram_matrix = generate_histogram(matrix)
+    with open(filename + "_histo.csv") as file:
+        for elm in histogram_matrix:
+            file.write(",".join(elm))
+        file.close()
 
     print "Finished loading " + filename
     return histogram_matrix
