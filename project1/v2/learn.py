@@ -3,7 +3,7 @@ import sys
 
 from sklearn.linear_model import Lasso
 from sklearn.linear_model import KernelRidge
-from sklearn import svm
+from sklearn.svm import SVR
 from sklearn import grid_search
 import numpy as np
 
@@ -103,9 +103,9 @@ def do_svm_rbf():
 
     if GRID_SEARCH:
         param_grid = [{'C':[1.0, 10.0],  'epsilon':[0.01, 0.1, 1], 'kernel': ['rbf']}]
-        model = grid_search.GridSearchCV(svm.SVR(), param_grid, cv=5)
+        model = grid_search.GridSearchCV(SVR(), param_grid, cv=5)
     else:
-        model = svm.SVR()
+        model = SVR()
 
     train_and_predict(model)
 
@@ -115,9 +115,9 @@ def do_svm_poly():
 
     if GRID_SEARCH:
         param_grid = [{'C':[1.0, 10.0, 0.1], 'kernel': ['poly'], 'degree':[1,2,3,4,5,6]}]
-        model = grid_search.GridSearchCV(svm.SVR(), param_grid, cv=5)
+        model = grid_search.GridSearchCV(SVR(), param_grid, cv=5)
     else:
-        model = svm.SVR()
+        model = SVR()
 
     train_and_predict(model)
 
