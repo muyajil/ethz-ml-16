@@ -17,6 +17,7 @@ NUM_DATAPOINTS = -1
 MODEL_NAME = ""
 GRID_SEARCH = False
 FILE_NAME = ""
+HISTOGRAM = False
 
 MAX_VALUE = 0
 
@@ -45,14 +46,17 @@ def read_data(filename):
         if i == NUM_DATAPOINTS:
             break
 
-    histogram_matrix = generate_histogram(matrix)
-    with open("data/" + filename + "_histo.csv") as file:
-        for elm in histogram_matrix:
-            file.write(",".join(elm))
-        file.close()
-
     print "Finished loading " + filename
-    return histogram_matrix
+
+    if HISTOGRAM:
+        histogram_matrix = generate_histogram(matrix)
+        with open("data/" + filename + "_histo.csv") as file:
+            for elm in histogram_matrix:
+                file.write(",".join(elm))
+            file.close()
+        return histogram_matrix
+    else:
+        return matrix
 
 def read_targets():
     targets = []
@@ -113,7 +117,7 @@ def do_lasso():
         param_grid = [{'alpha':np.linspace(10, 1000, 100)}]
         model = grid_search.GridSearchCV(Lasso(max_iter=20000), param_grid, cv=5, verbose=5)
     else:
-        model = Lasso(max_iter=20000)
+        model = Lasso(max_iter=20000, alpha=1)
 
     train_and_predict(model)
 
@@ -171,7 +175,7 @@ def do_ridge_poly():
 
 def print_usage():
     print ""
-    print "Usage: learn.py {" + ','.join(models) + "} {grid_search, no_grid_search} input_file_name [num_datapoints]"
+    print "Usage: learn.py {" + ','.join(models) + "} {grid_search, no_grid_search} input_file_name {histogram, no_histogram} [num_datapoints]"
     print "{...}: Choose one of the possibilities"
     print "[...]: Either use this param or not"
     print ""
@@ -190,7 +194,10 @@ if __name__ == "__main__":
             FILE_NAME = sys.argv[3]
 
         if len(sys.argv) > 4:
-            NUM_DATAPOINTS = int(sys.argv[4])
+            HISTOGRAM = sys.argv[4] == 'histogram'
+
+        if len(sys.argv) > 5:
+            NUM_DATAPOINTS = int(sys.argv[5])
 
         if sys.argv[1] in models:
             globals()["do_"+sys.argv[1]]()
