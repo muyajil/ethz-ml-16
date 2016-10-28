@@ -43,6 +43,7 @@ def read_data(filename):
             MAX_VALUE = max_elem
         matrix.append(elm)
         i += 1
+        print "Finished file " + str(i+1)
         if i == NUM_DATAPOINTS:
             break
 
