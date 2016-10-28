@@ -3,9 +3,11 @@ import numpy as np
 import nibabel as nib
 import sPickle # -> https://github.com/pgbovine/streaming-pickle
 import sys
+from matplotlib import pyplot as plt
+from scipy import ndimage
 
 bool_euler = False # deactivates interaction with user and just computes both test and train
-debug = True  # just computes the first image of whatever set is selected
+debug = False  # just computes the first image of whatever set is selected
 number_test_images = 1
 
 modes = ["avg", "vector", "grad"]
@@ -128,6 +130,16 @@ def extract_data(kind, current_number, total_datapoints, histogram=True):
 			X = [elm for matrix in X_3d for vec in matrix for elm in vec]
 		elif mode == "grad":
 			## TODO
+			X_3d = process_img(image, False)
+			X = []
+			X = ndimage.filters.laplace(np.array(X_3d))
+
+			plt.subplot(2,2,1),plt.imshow(X_3d[50],cmap = 'gray')
+			plt.title('Original'), plt.xticks([]), plt.yticks([])
+			plt.subplot(2,2,2),plt.imshow(X[50],cmap = 'gray')
+			plt.title('Laplacian'), plt.xticks([]), plt.yticks([])
+
+			plt.show()
 			exit()
 		else:
 			print "unexpected error: unsupported mode. exiting.."
@@ -160,7 +172,7 @@ def extract_data(kind, current_number, total_datapoints, histogram=True):
 	out_file.close()
 
 	out_file = open(mode + "_" + kind + "_histogram.pickle", 'w')
-	out_file.s_dump(X_histogram, out_file)
+	sPickle.s_dump(X_histogram, out_file)
 
 	return current_number
 
