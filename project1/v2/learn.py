@@ -36,7 +36,7 @@ def read_data(filename):
 
     matrix = []
     i = 0
-    for elm in sPickle.s_load(open(filename)):
+    for elm in sPickle.s_load(open("data/" + filename)):
         max_elem = max(elm)
         if(max_elem > MAX_VALUE):
             MAX_VALUE = max_elem
@@ -46,7 +46,7 @@ def read_data(filename):
             break
 
     histogram_matrix = generate_histogram(matrix)
-    with open(filename + "_histo.csv") as file:
+    with open("data/" + filename + "_histo.csv") as file:
         for elm in histogram_matrix:
             file.write(",".join(elm))
         file.close()
@@ -56,7 +56,7 @@ def read_data(filename):
 
 def read_targets():
     targets = []
-    with open("../targets.csv", 'r') as file:
+    with open("data/targets.csv", 'r') as file:
         targets = file.read().split()
     targets = map(int, targets)
 
@@ -66,7 +66,7 @@ def read_targets():
     return targets
 
 def generate_submission(Y_test):
-    filename = "../submission_" + MODEL_NAME + ".csv"
+    filename = "submission_" + MODEL_NAME + ".csv"
     with open(filename, "w") as file:
                 file.write("Id,Prediction\n")
                 for i in range(len(Y_test)):
