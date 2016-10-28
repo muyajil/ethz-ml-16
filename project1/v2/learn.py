@@ -21,43 +21,46 @@ HISTOGRAM = False
 
 MAX_VALUE = 0
 
-def generate_histogram(matrix):
+def generate_histogram_single(vector):
     global MAX_VALUE
-    histogram_matrix = []
-    for datapoint in matrix:
-        histogram = [0]*(MAX_VALUE+1)
-        for feature in datapoint:
-            histogram[int(feature)] += 1
-        histogram_matrix.append(histogram)
-    return histogram_matrix
+    histogram_single = [0]*(MAX_VALUE+1)
+    for feature in vector:
+        histogram_line[int(feature)] +=1
+    return histogram_line
 
 def read_data(filename):
     global MAX_VALUE
+    global HISTOGRAM
     print "Loading " + filename + "..."
 
     matrix = []
     i = 0
+
     for elm in sPickle.s_load(open("data/" + filename)):
         max_elem = max(elm)
         if(max_elem > MAX_VALUE):
             MAX_VALUE = max_elem
-        matrix.append(elm)
+        
+        if HISTOGRAM:
+            matrix.append(generate_histogram_single(elm))
+        else:
+            matrix.append(elm)
+        
         i += 1
         print "Finished file " + str(i+1)
+        
         if i == NUM_DATAPOINTS:
             break
 
-    print "Finished loading " + filename
-
     if HISTOGRAM:
-        histogram_matrix = generate_histogram(matrix)
         with open("data/" + filename + "_histo.csv") as file:
             for elm in histogram_matrix:
                 file.write(",".join(elm))
             file.close()
-        return histogram_matrix
-    else:
-        return matrix
+
+    print "Finished loading " + filename
+
+    return matrix
 
 def read_targets():
     targets = []
@@ -188,17 +191,21 @@ if __name__ == "__main__":
         print_usage()
         exit()
     else:
+        print "Your chosen parameters:"
         if len(sys.argv) > 2:
             GRID_SEARCH = sys.argv[2] == 'grid_search'
+            print "Grid Search\t" + str(GRID_SEARCH)
 
         if len(sys.argv) > 3:
             FILE_NAME = sys.argv[3]
 
         if len(sys.argv) > 4:
             HISTOGRAM = sys.argv[4] == 'histogram'
+            print "Histogram\t" + str(HISTOGRAM)
 
         if len(sys.argv) > 5:
             NUM_DATAPOINTS = int(sys.argv[5])
+            print "#Datapoints\t" + str(NUM_DATAPOINTS)
 
         if sys.argv[1] in models:
             globals()["do_"+sys.argv[1]]()
