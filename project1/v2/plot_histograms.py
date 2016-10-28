@@ -7,7 +7,7 @@ ID = 0
 
 def load_histogram():
 	matrix = []
-	with open("data/std_train.pickle_histo.csv") as file:
+	with open("../data/std_train.pickle_histo.csv") as file:
 		for line in file.readlines():
 			matrix.append(map(int, line.split(",")))
 	return matrix

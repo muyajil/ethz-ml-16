@@ -56,7 +56,7 @@ def read_data(filename):
     if HISTOGRAM:
         with open(DATA_FOLDER + filename + "_histo.csv", 'w') as file:
             for elm in matrix:
-                file.write(",".join([str(x) for x in elm]) + "")
+                file.write(",".join([str(x) for x in elm]) + "\n")
             file.close()
 
     print "Finished loading " + filename
