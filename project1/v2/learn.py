@@ -19,14 +19,14 @@ GRID_SEARCH = False
 FILE_NAME = ""
 HISTOGRAM = False
 
-MAX_VALUE = 0
+MAX_VALUE = 4418
 
-def generate_histogram_single(vector):
+def generate_histogram(vector):
     global MAX_VALUE
-    histogram_single = [0]*(MAX_VALUE+1)
+    histogram = [0]*(MAX_VALUE+1)
     for feature in vector:
-        histogram_line[int(feature)] +=1
-    return histogram_line
+        histogram[int(feature)] +=1
+    return histogram
 
 def read_data(filename):
     global MAX_VALUE
@@ -38,11 +38,11 @@ def read_data(filename):
 
     for elm in sPickle.s_load(open("data/" + filename)):
         max_elem = max(elm)
-        if(max_elem > MAX_VALUE):
+        if(max_elem > MAX_VALUE && MAX_VALUE == 0):
             MAX_VALUE = max_elem
         
         if HISTOGRAM:
-            matrix.append(generate_histogram_single(elm))
+            matrix.append(generate_histogram(elm))
         else:
             matrix.append(elm)
         
@@ -53,9 +53,9 @@ def read_data(filename):
             break
 
     if HISTOGRAM:
-        with open("data/" + filename + "_histo.csv") as file:
-            for elm in histogram_matrix:
-                file.write(",".join(elm))
+        with open("data/" + filename + "_histo.csv", 'w') as file:
+            for elm in matrix:
+                file.write(",".join([str(x) for x in elm]))
             file.close()
 
     print "Finished loading " + filename
@@ -87,8 +87,6 @@ def train_and_predict(model):
     
     X_train = read_data(FILE_NAME + "_train.pickle")
 
-    print "Max Value Train: " + str(MAX_VALUE);
-
     print "Start training..."
     
     model.fit(X_train, Y_train)
@@ -101,8 +99,6 @@ def train_and_predict(model):
     del X_train
     
     X_test = read_data(FILE_NAME + "_test.pickle")
-
-    print "Max Value Test: " + str(MAX_VALUE);
 
     print "Making predictions"
 
