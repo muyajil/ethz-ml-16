@@ -47,7 +47,7 @@ def read_data(filename):
             matrix.append(elm)
         
         i += 1
-        print "Finished file " + str(i+1)
+        print "Finished file " + str(i)
         
         if i == NUM_DATAPOINTS:
             break
@@ -205,7 +205,7 @@ if __name__ == "__main__":
 
         if len(sys.argv) > 5:
             NUM_DATAPOINTS = int(sys.argv[5])
-            print "#Datapoints\t" + str(NUM_DATAPOINTS)
+            print "Datapoints\t" + str(NUM_DATAPOINTS)
 
         if sys.argv[1] in models:
             globals()["do_"+sys.argv[1]]()
