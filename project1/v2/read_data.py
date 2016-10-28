@@ -6,6 +6,7 @@ import sys
 from matplotlib import pyplot as plt
 from scipy import ndimage
 from skimage import filters as skifilter
+from skimage import exposure as skex
 
 bool_euler = False # deactivates interaction with user and just computes both test and train
 debug = False  # just computes the first image of whatever set is selected
@@ -137,6 +138,7 @@ def extract_data(kind, current_number, total_datapoints, histogram=True):
             X_grad = skifilter.laplace(skifilter.gaussian(np.array(X_3d), 1))
             X_sobel = [skifilter.sobel(img) for img in X_3d]
 
+            '''
             plt.subplot(2,2,1),plt.imshow(X_3d[40],cmap = 'gray')
             plt.title('Original'), plt.xticks([]), plt.yticks([])
             plt.subplot(2,2,2),plt.imshow(np.absolute(X[40]),cmap = 'gray')
@@ -145,6 +147,7 @@ def extract_data(kind, current_number, total_datapoints, histogram=True):
             plt.title('sobel'), plt.xticks([]), plt.yticks([])
             plt.subplot(2,2,4),plt.imshow(np.absolute(X_grad[40]),cmap = 'gray')
             plt.title('Laplacian with Gauss'), plt.xticks([]), plt.yticks([])
+            '''
 
             print max([elm for matrix in X_3d for vec in matrix for elm in vec])
             print max([elm for matrix in X for vec in matrix for elm in vec])
