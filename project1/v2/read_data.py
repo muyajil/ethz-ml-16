@@ -3,13 +3,13 @@ import numpy as np
 import nibabel as nib
 import sPickle # -> https://github.com/pgbovine/streaming-pickle
 import sys
-from matplotlib import pyplot as plt
+#from matplotlib import pyplot as plt
 from scipy import ndimage
 from skimage import filters as skifilter
 from skimage import exposure as skex
 
 bool_euler = False # deactivates interaction with user and just computes both test and train
-debug = False  # just computes the first image of whatever set is selected
+debug = True  # just computes the first image of whatever set is selected
 number_test_images = 1
 
 modes = ["avg", "vector", "grad"]
@@ -116,7 +116,13 @@ def extract_data(kind, current_number, total_datapoints, histogram=True):
         image_num = number_test_images
 
     out_file = open(mode + "_" + kind + ".pickle", 'w')
-    out_file_histo = open(mode + "_" + kind + "_histogram.pickle", 'w')
+    if mode == "grad":
+    	out_file_histo1 = open(mode + "_" + kind + "_histogram1.pickle", 'w')
+    	out_file_histo2 = open(mode + "_" + kind + "_histogram2.pickle", 'w')
+    	out_file_histo3 = open(mode + "_" + kind + "_histogram3.pickle", 'w')
+    else:
+    	out_file_histo = open(mode + "_" + kind + "_histogram.pickle", 'w')
+
 
     for i in range(image_num):
         if kind == "train":
@@ -127,9 +133,11 @@ def extract_data(kind, current_number, total_datapoints, histogram=True):
         if mode == "avg":
             X_3d = process_img(image, True)
             X = [(sum(vec) / float(len(vec))) for matrix in X_3d for vec in matrix]
+            X_histogram = [0] * 1000
         elif mode == "vector":
             X_3d = process_img(image, True)
             X = [elm for matrix in X_3d for vec in matrix for elm in vec]
+            X_histogram = [0] * 1000
         elif mode == "grad":
             ## TODO
             X_3d = process_img(image, False)
@@ -154,7 +162,33 @@ def extract_data(kind, current_number, total_datapoints, histogram=True):
             print max([elm for matrix in X_sobel for vec in matrix for elm in vec])
             print max([elm for matrix in X_grad for vec in matrix for elm in vec])
 
-            plt.show()
+            hist = []
+            for elm in [elm for matrix in X for vec in matrix for elm in vec]:
+            	if abs(elm) < 10000:
+            		hist[abs(elm)] += 1
+            	else:
+            		print "too big histo entry, X"
+            sPickle.s_dump_elt(hist, out_file_histo1)
+
+            hist = []
+            for elm in [elm for matrix in X_sobel for vec in matrix for elm in vec]:
+            	v = abs(elm) * 100000
+            	if v < 10000:
+            		hist[v] += 1
+            	else:
+            		print "too big histo entry, X_soebel"
+            sPickle.s_dump_elt(hist, out_file_histo2)
+
+            hist = []
+            for elm in [elm for matrix in X_grad for vec in matrix for elm in vec]:
+            	v = abs(elm) * 100000
+            	if v < 10000:
+            		hist[v] += 1
+            	else:
+            		print "too big histo entry, X_soebel"
+            sPickle.s_dump_elt(hist, out_file_histo3)
+            
+            #plt.show()
             exit()
         else:
             print "unexpected error: unsupported mode. exiting.."
@@ -178,19 +212,25 @@ def extract_data(kind, current_number, total_datapoints, histogram=True):
         sPickle.s_dump_elt(X, out_file)
 
         # make histogram
-        X_histogram = [0] * 10000
 
-        for elm in X:
-            X_histogram[int(elm)] += 1
-
-        sPickle.s_dump_elt(X_histogram, out_file_histo)
+        if mode == "grad":
+        	exit(5)
+        else:
+     		for elm in X:
+        		X_histogram[int(elm)] += 1
+        	sPickle.s_dump_elt(X_histogram, out_file_histo)
 
         current_number += 1
         print "Finished file " + str(i+1) + "; " + "%.2f" % ((current_number/float(total_datapoints)) * 100) + "%"
         del image
 
     out_file.close()
-    out_file_histo.close()
+    if mode == "grad":
+    	out_file_histo1.close()
+    	out_file_histo2.close()
+    	out_file_histo3.close()
+    else:
+		out_file_histo.close()
 
     return current_number
 
