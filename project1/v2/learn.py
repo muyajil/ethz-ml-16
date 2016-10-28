@@ -38,7 +38,7 @@ def read_data(filename):
 
     for elm in sPickle.s_load(open("data/" + filename)):
         max_elem = max(elm)
-        if(max_elem > MAX_VALUE && MAX_VALUE == 0):
+        if(max_elem > MAX_VALUE and MAX_VALUE == 0):
             MAX_VALUE = max_elem
         
         if HISTOGRAM:
