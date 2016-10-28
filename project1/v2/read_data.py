@@ -107,7 +107,7 @@ def extract_data(kind, current_number, total_datapoints, histogram=True):
     X_length = 0
 
     if kind == "train":
-        mage_num = data_points_train # train
+        image_num = data_points_train # train
     elif kind == "test":
         image_num = data_points_test # test
     else:
@@ -164,12 +164,16 @@ def extract_data(kind, current_number, total_datapoints, histogram=True):
             '''
 
             hist = [0] * 10000
+            too_big = 0
             for elm in [elm for matrix in X for vec in matrix for elm in vec]:
             	if abs(elm) < 10000:
             		hist[abs(elm)] += 1
             	else:
-            		print "too big histo entry, X"
+            		too_big += 1
+            		#print "too big histo entry, X"
             sPickle.s_dump_elt(hist, out_file_histo1)
+            if too_big > 0:
+            	print "X had " + too_big + " too hight gradients"
 
             hist = [0] * 10000
             for elm in [elm for matrix in X_sobel for vec in matrix for elm in vec]:
@@ -215,7 +219,7 @@ def extract_data(kind, current_number, total_datapoints, histogram=True):
         # make histogram
 
         if mode == "grad":
-        	i = 0
+        	irelevant = 0
         else:
      		for elm in X:
         		X_histogram[int(elm)] += 1
