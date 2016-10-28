@@ -18,6 +18,7 @@ MODEL_NAME = ""
 GRID_SEARCH = False
 FILE_NAME = ""
 HISTOGRAM = False
+DATA_FOLDER = "../data/"
 
 MAX_VALUE = 4418
 
@@ -26,7 +27,7 @@ def generate_histogram(vector):
     histogram = [0]*(MAX_VALUE+1)
     for feature in vector:
         histogram[int(feature)] +=1
-    return histogram
+    return histogram[1:2000]
 
 def read_data(filename):
     global MAX_VALUE
@@ -36,7 +37,7 @@ def read_data(filename):
     matrix = []
     i = 0
 
-    for elm in sPickle.s_load(open("data/" + filename)):
+    for elm in sPickle.s_load(open(DATA_FOLDER + filename)):
         max_elem = max(elm)
         if(max_elem > MAX_VALUE and MAX_VALUE == 0):
             MAX_VALUE = max_elem
@@ -53,9 +54,9 @@ def read_data(filename):
             break
 
     if HISTOGRAM:
-        with open("data/" + filename + "_histo.csv", 'w') as file:
+        with open(DATA_FOLDER + filename + "_histo.csv", 'w') as file:
             for elm in matrix:
-                file.write(",".join([str(x) for x in elm]))
+                file.write(",".join([str(x) for x in elm]) + "")
             file.close()
 
     print "Finished loading " + filename
@@ -64,7 +65,7 @@ def read_data(filename):
 
 def read_targets():
     targets = []
-    with open("data/targets.csv", 'r') as file:
+    with open(DATA_FOLDER + "targets.csv", 'r') as file:
         targets = file.read().split()
     targets = map(int, targets)
 
@@ -114,7 +115,7 @@ def do_lasso():
     MODEL_NAME = "LASSO"
 
     if GRID_SEARCH:
-        param_grid = [{'alpha':np.linspace(10, 1000, 100)}]
+        param_grid = [{'alpha':np.logspace(-3, 3, 1000)}]
         model = grid_search.GridSearchCV(Lasso(max_iter=20000), param_grid, cv=5, verbose=5)
     else:
         model = Lasso(max_iter=20000, alpha=1)
