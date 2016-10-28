@@ -17,46 +17,54 @@ NUM_DATAPOINTS = -1
 MODEL_NAME = ""
 GRID_SEARCH = False
 FILE_NAME = ""
+HISTOGRAM = False
 
-MAX_VALUE = 0
+MAX_VALUE = 4418
 
-def generate_histogram(matrix):
+def generate_histogram(vector):
     global MAX_VALUE
-    histogram_matrix = []
-    for datapoint in matrix:
-        histogram = [0]*(MAX_VALUE+1)
-        for feature in datapoint:
-            histogram[int(feature)] += 1
-        histogram_matrix.append(histogram)
-    return histogram_matrix
+    histogram = [0]*(MAX_VALUE+1)
+    for feature in vector:
+        histogram[int(feature)] +=1
+    return histogram
 
 def read_data(filename):
     global MAX_VALUE
+    global HISTOGRAM
     print "Loading " + filename + "..."
 
     matrix = []
     i = 0
-    for elm in sPickle.s_load(open(filename)):
+
+    for elm in sPickle.s_load(open("data/" + filename)):
         max_elem = max(elm)
-        if(max_elem > MAX_VALUE):
+        if(max_elem > MAX_VALUE and MAX_VALUE == 0):
             MAX_VALUE = max_elem
-        matrix.append(elm)
+        
+        if HISTOGRAM:
+            matrix.append(generate_histogram(elm))
+        else:
+            matrix.append(elm)
+        
         i += 1
+        print "Finished file " + str(i)
+        
         if i == NUM_DATAPOINTS:
             break
 
-    histogram_matrix = generate_histogram(matrix)
-    with open(filename + "_histo.csv") as file:
-        for elm in histogram_matrix:
-            file.write(",".join(elm))
-        file.close()
+    if HISTOGRAM:
+        with open("data/" + filename + "_histo.csv", 'w') as file:
+            for elm in matrix:
+                file.write(",".join([str(x) for x in elm]))
+            file.close()
 
     print "Finished loading " + filename
-    return histogram_matrix
+
+    return matrix
 
 def read_targets():
     targets = []
-    with open("../targets.csv", 'r') as file:
+    with open("data/targets.csv", 'r') as file:
         targets = file.read().split()
     targets = map(int, targets)
 
@@ -66,7 +74,7 @@ def read_targets():
     return targets
 
 def generate_submission(Y_test):
-    filename = "../submission_" + MODEL_NAME + ".csv"
+    filename = "submission_" + MODEL_NAME + ".csv"
     with open(filename, "w") as file:
                 file.write("Id,Prediction\n")
                 for i in range(len(Y_test)):
@@ -78,8 +86,6 @@ def train_and_predict(model):
     Y_train = read_targets()
     
     X_train = read_data(FILE_NAME + "_train.pickle")
-
-    print "Max Value Train: " + str(MAX_VALUE);
 
     print "Start training..."
     
@@ -93,8 +99,6 @@ def train_and_predict(model):
     del X_train
     
     X_test = read_data(FILE_NAME + "_test.pickle")
-
-    print "Max Value Test: " + str(MAX_VALUE);
 
     print "Making predictions"
 
@@ -113,7 +117,7 @@ def do_lasso():
         param_grid = [{'alpha':np.linspace(10, 1000, 100)}]
         model = grid_search.GridSearchCV(Lasso(max_iter=20000), param_grid, cv=5, verbose=5)
     else:
-        model = Lasso(max_iter=20000)
+        model = Lasso(max_iter=20000, alpha=1)
 
     train_and_predict(model)
 
@@ -171,7 +175,7 @@ def do_ridge_poly():
 
 def print_usage():
     print ""
-    print "Usage: learn.py {" + ','.join(models) + "} {grid_search, no_grid_search} input_file_name [num_datapoints]"
+    print "Usage: learn.py {" + ','.join(models) + "} {grid_search, no_grid_search} input_file_name {histogram, no_histogram} [num_datapoints]"
     print "{...}: Choose one of the possibilities"
     print "[...]: Either use this param or not"
     print ""
@@ -183,14 +187,21 @@ if __name__ == "__main__":
         print_usage()
         exit()
     else:
+        print "Your chosen parameters:"
         if len(sys.argv) > 2:
             GRID_SEARCH = sys.argv[2] == 'grid_search'
+            print "Grid Search\t" + str(GRID_SEARCH)
 
         if len(sys.argv) > 3:
             FILE_NAME = sys.argv[3]
 
         if len(sys.argv) > 4:
-            NUM_DATAPOINTS = int(sys.argv[4])
+            HISTOGRAM = sys.argv[4] == 'histogram'
+            print "Histogram\t" + str(HISTOGRAM)
+
+        if len(sys.argv) > 5:
+            NUM_DATAPOINTS = int(sys.argv[5])
+            print "Datapoints\t" + str(NUM_DATAPOINTS)
 
         if sys.argv[1] in models:
             globals()["do_"+sys.argv[1]]()
