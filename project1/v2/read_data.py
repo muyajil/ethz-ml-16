@@ -173,7 +173,7 @@ def extract_data(kind, current_number, total_datapoints, histogram=True):
             		#print "too big histo entry, X"
             sPickle.s_dump_elt(hist, out_file_histo1)
             if too_big > 0:
-            	print "X had " + too_big + " too hight gradients"
+            	print "X had " + str(too_big) + " too hight gradients"
 
             hist = [0] * 10000
             for elm in [elm for matrix in X_sobel for vec in matrix for elm in vec]:
