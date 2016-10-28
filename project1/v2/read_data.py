@@ -9,7 +9,7 @@ from skimage import filters as skifilter
 from skimage import exposure as skex
 
 bool_euler = False # deactivates interaction with user and just computes both test and train
-debug = True  # just computes the first image of whatever set is selected
+debug = False  # just computes the first image of whatever set is selected
 number_test_images = 1
 
 modes = ["avg", "vector", "grad"]
@@ -156,13 +156,14 @@ def extract_data(kind, current_number, total_datapoints, histogram=True):
             plt.subplot(2,2,4),plt.imshow(np.absolute(X_grad[40]),cmap = 'gray')
             plt.title('Laplacian with Gauss'), plt.xticks([]), plt.yticks([])
             '''
-
+            '''
             print max([elm for matrix in X_3d for vec in matrix for elm in vec])
             print max([elm for matrix in X for vec in matrix for elm in vec])
             print max([elm for matrix in X_sobel for vec in matrix for elm in vec])
             print max([elm for matrix in X_grad for vec in matrix for elm in vec])
+            '''
 
-            hist = []
+            hist = [0] * 10000
             for elm in [elm for matrix in X for vec in matrix for elm in vec]:
             	if abs(elm) < 10000:
             		hist[abs(elm)] += 1
@@ -170,26 +171,25 @@ def extract_data(kind, current_number, total_datapoints, histogram=True):
             		print "too big histo entry, X"
             sPickle.s_dump_elt(hist, out_file_histo1)
 
-            hist = []
+            hist = [0] * 10000
             for elm in [elm for matrix in X_sobel for vec in matrix for elm in vec]:
             	v = abs(elm) * 100000
             	if v < 10000:
-            		hist[v] += 1
+            		hist[int(v)] += 1
             	else:
             		print "too big histo entry, X_soebel"
             sPickle.s_dump_elt(hist, out_file_histo2)
 
-            hist = []
+            hist = [0] * 10000
             for elm in [elm for matrix in X_grad for vec in matrix for elm in vec]:
             	v = abs(elm) * 100000
             	if v < 10000:
-            		hist[v] += 1
+            		hist[int(v)] += 1
             	else:
             		print "too big histo entry, X_soebel"
             sPickle.s_dump_elt(hist, out_file_histo3)
             
             #plt.show()
-            exit()
         else:
             print "unexpected error: unsupported mode. exiting.."
             exit()
@@ -205,6 +205,7 @@ def extract_data(kind, current_number, total_datapoints, histogram=True):
                 elif mode == "vector":
                     X = [elm for matrix in X_3d for vec in matrix for elm in vec]
                 elif mode == "grad":
+                    print "something unexpected happend, not same length vector"
                     exit(5)
                 else:
                     print "unexpecter error: unsupported mode. exiting.."
@@ -214,7 +215,7 @@ def extract_data(kind, current_number, total_datapoints, histogram=True):
         # make histogram
 
         if mode == "grad":
-        	exit(5)
+        	i = 0
         else:
      		for elm in X:
         		X_histogram[int(elm)] += 1
