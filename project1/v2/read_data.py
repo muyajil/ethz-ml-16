@@ -5,6 +5,7 @@ import sPickle # -> https://github.com/pgbovine/streaming-pickle
 import sys
 from matplotlib import pyplot as plt
 from scipy import ndimage
+from skimage import filters as skifilter
 
 bool_euler = False # deactivates interaction with user and just computes both test and train
 debug = False  # just computes the first image of whatever set is selected
@@ -62,155 +63,169 @@ def query_yes_no(question, default="no"):
                              "(or 'y' or 'n').\n")
 
 def process_img(img, filtered):
-	(height, width, depth, values) = img.shape
-	data = img.get_data()
-	X_3d = []
-	for a in range(height):
-		X_2d = []
-		for b in range(width):
-			X_1d = [num for sub in data[a][b] for num in sub]
-			if filtered:
-				X_1d = filter(lambda a: a != 0, X_1d)
-			if len(X_1d) > 0:
-				X_2d.append(X_1d)
-		if len(X_2d) > 0:
-			X_3d.append(X_2d)
-	del data
-	return X_3d
+    (height, width, depth, values) = img.shape
+    data = img.get_data()
+    X_3d = []
+    for a in range(height):
+        X_2d = []
+        for b in range(width):
+            X_1d = [num for sub in data[a][b] for num in sub]
+            if filtered:
+                X_1d = filter(lambda a: a != 0, X_1d)
+            if len(X_1d) > 0:
+                X_2d.append(X_1d)
+        if len(X_2d) > 0:
+            X_3d.append(X_2d)
+    del data
+    return X_3d
 
 def process_faulty_img(img):
-	image_correct = nib.load(os.path.join(root_dir, train_dir, file_prefix_train + str(1) + file_suffix))
-	(height, width, depth, values) = image_correct.shape
-	data = img.get_data()
-	data_correct = image_correct.get_data()
-	X_3d = []
-	for a in range(height):
-		X_2d = []
-		for b in range(width):
-			X_1d = [num for sub in data[a][b] for num in sub]
-			c_vec_correct = [num for sub in data_correct[a][b] for num in sub]
-			c_bool_correct = map(bool, c_vec_correct)
-			c_bitmask_correct = map(int, c_bool_correct)
-			X_1d = [m+n for (m,n) in zip(X_1d, c_bitmask_correct)]
-			X_1d_filtered = filter(lambda k: k != 0, X_1d)
-			X_1d_final = map(lambda o: o-1, X_1d_filtered)
-			if len(X_1d_final) > 0:
-				X_2d.append(X_1d_final)
-		if len(X_2d) > 0:
-			X_3d.append(X_2d)
-	del [data, data_correct, image_correct]
-	return X			
+    image_correct = nib.load(os.path.join(root_dir, train_dir, file_prefix_train + str(1) + file_suffix))
+    (height, width, depth, values) = image_correct.shape
+    data = img.get_data()
+    data_correct = image_correct.get_data()
+    X_3d = []
+    for a in range(height):
+        X_2d = []
+        for b in range(width):
+            X_1d = [num for sub in data[a][b] for num in sub]
+            c_vec_correct = [num for sub in data_correct[a][b] for num in sub]
+            c_bool_correct = map(bool, c_vec_correct)
+            c_bitmask_correct = map(int, c_bool_correct)
+            X_1d = [m+n for (m,n) in zip(X_1d, c_bitmask_correct)]
+            X_1d_filtered = filter(lambda k: k != 0, X_1d)
+            X_1d_final = map(lambda o: o-1, X_1d_filtered)
+            if len(X_1d_final) > 0:
+                X_2d.append(X_1d_final)
+        if len(X_2d) > 0:
+            X_3d.append(X_2d)
+    del [data, data_correct, image_correct]
+    return X
 
 def extract_data(kind, current_number, total_datapoints, histogram=True):
-	X_length = 0
+    X_length = 0
 
-	if kind == "train":
-		image_num = data_points_train # train
-	elif kind == "test":
-		image_num = data_points_test # test
-	else:
-		print "error, not correct test/train for kind"
-	if debug:
-		image_num = number_test_images
+    if kind == "train":
+        mage_num = data_points_train # train
+    elif kind == "test":
+        image_num = data_points_test # test
+    else:
+        print "error, not correct test/train for kind"
+    if debug:
+        image_num = number_test_images
 
-	out_file = open(mode + "_" + kind + ".pickle", 'w')
-	X_histogram = [0] * 10000
+    out_file = open(mode + "_" + kind + ".pickle", 'w')
+    out_file_histo = open(mode + "_" + kind + "_histogram.pickle", 'w')
 
-	for i in range(image_num):
-		if kind == "train":
-			image = nib.load(os.path.join(root_dir, train_dir, file_prefix_train + str(i+1) + file_suffix))
-		elif kind == "test":
-			image = nib.load(os.path.join(root_dir, test_dir, file_prefix_test + str(i+1) + file_suffix))
-		
-		if mode == "avg":
-			X_3d = process_img(image, True)
-			X = [(sum(vec) / float(len(vec))) for matrix in X_3d for vec in matrix]
-		elif mode == "vector":
-			X_3d = process_img(image, True)
-			X = [elm for matrix in X_3d for vec in matrix for elm in vec]
-		elif mode == "grad":
-			## TODO
-			X_3d = process_img(image, False)
-			X = []
-			X = ndimage.filters.laplace(np.array(X_3d))
+    for i in range(image_num):
+        if kind == "train":
+            image = nib.load(os.path.join(root_dir, train_dir, file_prefix_train + str(i+1) + file_suffix))
+        elif kind == "test":
+            image = nib.load(os.path.join(root_dir, test_dir, file_prefix_test + str(i+1) + file_suffix))
 
-			plt.subplot(2,2,1),plt.imshow(X_3d[50],cmap = 'gray')
-			plt.title('Original'), plt.xticks([]), plt.yticks([])
-			plt.subplot(2,2,2),plt.imshow(X[50],cmap = 'gray')
-			plt.title('Laplacian'), plt.xticks([]), plt.yticks([])
+        if mode == "avg":
+            X_3d = process_img(image, True)
+            X = [(sum(vec) / float(len(vec))) for matrix in X_3d for vec in matrix]
+        elif mode == "vector":
+            X_3d = process_img(image, True)
+            X = [elm for matrix in X_3d for vec in matrix for elm in vec]
+        elif mode == "grad":
+            ## TODO
+            X_3d = process_img(image, False)
+            X = []
+            X = ndimage.filters.laplace(np.array(X_3d))
+            X_grad = skifilter.laplace(skifilter.gaussian(np.array(X_3d), 1))
+            X_sobel = [skifilter.sobel(img) for img in X_3d]
 
-			plt.show()
-			exit()
-		else:
-			print "unexpected error: unsupported mode. exiting.."
-			exit()
+            plt.subplot(2,2,1),plt.imshow(X_3d[40],cmap = 'gray')
+            plt.title('Original'), plt.xticks([]), plt.yticks([])
+            plt.subplot(2,2,2),plt.imshow(np.absolute(X[40]),cmap = 'gray')
+            plt.title('Laplacian ndimage'), plt.xticks([]), plt.yticks([])
+            plt.subplot(2,2,3),plt.imshow(X_sobel[40],cmap = 'gray')
+            plt.title('sobel'), plt.xticks([]), plt.yticks([])
+            plt.subplot(2,2,4),plt.imshow(np.absolute(X_grad[40]),cmap = 'gray')
+            plt.title('Laplacian with Gauss'), plt.xticks([]), plt.yticks([])
+
+            print max([elm for matrix in X_3d for vec in matrix for elm in vec])
+            print max([elm for matrix in X for vec in matrix for elm in vec])
+            print max([elm for matrix in X_sobel for vec in matrix for elm in vec])
+            print max([elm for matrix in X_grad for vec in matrix for elm in vec])
+
+            plt.show()
+            exit()
+        else:
+            print "unexpected error: unsupported mode. exiting.."
+            exit()
 
 
-		if(i == 0):
-			X_length = len(X)
-		else:
-			if(len(X) != X_length):
-				X_3d = process_faulty_img(image)
-				if mode == "avg":
-					X = [(sum(vec) / float(len(vec))) for matrix in X_3d for vec in matrix]
-				elif mode == "vector":
-					X = [elm for matrix in X_3d for vec in matrix for elm in vec]
-				elif mode == "grad":
-					exit(5)
-				else:
-					print "unexpecter error: unsupported mode. exiting.."
+        if(i == 0):
+            X_length = len(X)
+        else:
+            if(len(X) != X_length):
+                X_3d = process_faulty_img(image)
+                if mode == "avg":
+                    X = [(sum(vec) / float(len(vec))) for matrix in X_3d for vec in matrix]
+                elif mode == "vector":
+                    X = [elm for matrix in X_3d for vec in matrix for elm in vec]
+                elif mode == "grad":
+                    exit(5)
+                else:
+                    print "unexpecter error: unsupported mode. exiting.."
 
-		for elm in X:
-			X_histogram[int(elm)] += 1
+        sPickle.s_dump_elt(X, out_file)
 
-		sPickle.s_dump_elt(X, out_file)
+        # make histogram
+        X_histogram = [0] * 10000
 
-		current_number += 1
-		print "Finished file " + str(i+1) + "; " + "%.2f" % ((current_number/float(total_datapoints)) * 100) + "%"
-		del image
+        for elm in X:
+            X_histogram[int(elm)] += 1
 
-	out_file.close()
+        sPickle.s_dump_elt(X_histogram, out_file_histo)
 
-	out_file = open(mode + "_" + kind + "_histogram.pickle", 'w')
-	sPickle.s_dump(X_histogram, out_file)
+        current_number += 1
+        print "Finished file " + str(i+1) + "; " + "%.2f" % ((current_number/float(total_datapoints)) * 100) + "%"
+        del image
 
-	return current_number
+    out_file.close()
+    out_file_histo.close()
+
+    return current_number
 
 
 # ask which to run
 kinds = []
 if bool_euler:
-	btest = True
-	btrain = True
-	mode = modes[0]
+    btest = True
+    btrain = True
+    mode = modes[0]
 else:
-	while True:
-		sys.stdout.write("Chose one of the following modes: " + str(modes) + "  ")
-		choice = raw_input().lower()
-		if choice in modes:
-			mode = choice
-			break
-		elif choice == "e":
-			exit()
-		else:
-			print "Not a valid mode, please choose a valid option or exit with 'e'"
+    while True:
+        sys.stdout.write("Chose one of the following modes: " + str(modes) + "  ")
+        choice = raw_input().lower()
+        if choice in modes:
+            mode = choice
+            break
+        elif choice == "e":
+            exit()
+        else:
+            print "Not a valid mode, please choose a valid option or exit with 'e'"
 
-	btest = query_yes_no("Extract data from test set?")
-	btrain = query_yes_no("Extract data from train set?")
+    btest = query_yes_no("Extract data from test set?")
+    btrain = query_yes_no("Extract data from train set?")
 
 if btest:
-	kinds.append("test")
-	total_datapoints += data_points_test
+    kinds.append("test")
+    total_datapoints += data_points_test
 if btrain:
-	kinds.append("train")
-	total_datapoints += data_points_train
+    kinds.append("train")
+    total_datapoints += data_points_train
 
 print "Running " + str(kinds) + " in " + ("debug" if debug else "normal") + " mode"
 
 for kind in kinds:
-	if debug:
-		total_datapoints = len(kinds) * number_test_images
+    if debug:
+        total_datapoints = len(kinds) * number_test_images
 
-	current_number += extract_data(kind, current_number, total_datapoints)
+    current_number += extract_data(kind, current_number, total_datapoints)
 
 print "done with everything, all good."
