@@ -36,7 +36,7 @@ def read_data(filename):
     matrix = []
     i = 0
 
-    for elm in sPickle.s_load(open("data/" + filename)):
+    for elm in sPickle.s_load(open("../data/" + filename)):
         max_elem = max(elm)
         if(max_elem > MAX_VALUE and MAX_VALUE == 0):
             MAX_VALUE = max_elem
@@ -53,7 +53,7 @@ def read_data(filename):
             break
 
     if HISTOGRAM:
-        with open("data/" + filename + "_histo.csv", 'w') as file:
+        with open("../data/" + filename + "_histo.csv", 'w') as file:
             for elm in matrix:
                 file.write(",".join([str(x) for x in elm]))
             file.close()
@@ -64,7 +64,7 @@ def read_data(filename):
 
 def read_targets():
     targets = []
-    with open("data/targets.csv", 'r') as file:
+    with open("../data/targets.csv", 'r') as file:
         targets = file.read().split()
     targets = map(int, targets)
 
