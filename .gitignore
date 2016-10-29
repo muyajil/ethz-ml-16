@@ -96,5 +96,7 @@ ENV/
 *.data
 
 *.txt
+!requirements.txt
 *.pickle
 .idea/*
+*.csv
