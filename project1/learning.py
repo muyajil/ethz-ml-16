@@ -123,12 +123,13 @@ elif methodeid == 3: #SVM-rbf
                 file.close()
 
 elif methodeid == 4: #SVM-poly
+        print "Hallo Dani\nBitte due, wenn dä siech fertig isch, am vince schribe\nMerci"
         print "Chosen Method: SVM\nStarting by reading in data..."
 
         #read in data
         clean_train = read_train()
         print "load clean train done"
-        param_grid = [{'C':[1.0, 10.0, 0.1], 'kernel': ['poly'], 'degree':[1,2,3,4,5,6]}]
+        param_grid = [{'C':[1.0, 10.0, 0.1], 'kernel': ['poly'], 'degree':[3]}]
         model = svm.SVR()
         print "started training"
         gs = grid_search.GridSearchCV(model, param_grid, cv=5)
