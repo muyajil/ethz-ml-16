@@ -100,3 +100,4 @@ ENV/
 *.pickle
 .idea/*
 *.csv
+project1/v2/test.py
