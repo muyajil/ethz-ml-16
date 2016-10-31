@@ -115,10 +115,10 @@ def do_lasso():
     MODEL_NAME = "LASSO"
 
     if GRID_SEARCH:
-        param_grid = [{'alpha':np.logspace(-3, 3, 1000)}]
+        param_grid = [{'alpha':np.linspace(1, 500, 500)}]
         model = grid_search.GridSearchCV(Lasso(max_iter=20000), param_grid, cv=5, verbose=5)
     else:
-        model = Lasso(max_iter=20000, alpha=1)
+        model = Lasso(max_iter=20000, alpha=31.078661877820139)
 
     train_and_predict(model)
 
@@ -153,7 +153,7 @@ def do_ridge_rbf():
     print "Chosen Method: RIDGE with RBF kernel"
     MODEL_NAME = "RIDGE_RBF"
     if GRID_SEARCH:
-        param_grid = [{'alpha':[1.0, 10.0],  'gamma':[0.01, 0.1, 1], 'kernel': ['rbf']}]
+        param_grid = [{'alpha':np.logspace(-3, 3, 1000),  'gamma':[0.01, 0.1, 1], 'kernel': ['rbf']}]
         model = grid_search.GridSearchCV(KernelRidge(), param_grid, cv=5)
     else:
         model = KernelRidge(alpha=10, kernel='rbf', gamma='0.1')

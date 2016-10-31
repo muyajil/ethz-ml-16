@@ -146,23 +146,6 @@ def extract_data(kind, current_number, total_datapoints, histogram=True):
             X_grad = skifilter.laplace(skifilter.gaussian(np.array(X_3d), 1))
             X_sobel = [skifilter.sobel(img) for img in X_3d]
 
-            '''
-            plt.subplot(2,2,1),plt.imshow(X_3d[40],cmap = 'gray')
-            plt.title('Original'), plt.xticks([]), plt.yticks([])
-            plt.subplot(2,2,2),plt.imshow(np.absolute(X[40]),cmap = 'gray')
-            plt.title('Laplacian ndimage'), plt.xticks([]), plt.yticks([])
-            plt.subplot(2,2,3),plt.imshow(X_sobel[40],cmap = 'gray')
-            plt.title('sobel'), plt.xticks([]), plt.yticks([])
-            plt.subplot(2,2,4),plt.imshow(np.absolute(X_grad[40]),cmap = 'gray')
-            plt.title('Laplacian with Gauss'), plt.xticks([]), plt.yticks([])
-            '''
-            '''
-            print max([elm for matrix in X_3d for vec in matrix for elm in vec])
-            print max([elm for matrix in X for vec in matrix for elm in vec])
-            print max([elm for matrix in X_sobel for vec in matrix for elm in vec])
-            print max([elm for matrix in X_grad for vec in matrix for elm in vec])
-            '''
-
             hist = [0] * 10000
             too_big = 0
             for elm in [elm for matrix in X for vec in matrix for elm in vec]:
