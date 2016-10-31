@@ -4,8 +4,8 @@ import nibabel as nib
 import sPickle # -> https://github.com/pgbovine/streaming-pickle
 import sys
 from scipy import ndimage
-from skimage import filters as skifilter
-from skimage import exposure as skex
+#from skimage import filters as skifilter
+#from skimage import exposure as skex
 
 '''
 Preprocessing with FAST () to correcting spatial intensity variations. Then run this script on the "restored input" output of FAST.
@@ -30,13 +30,13 @@ our submission.
 bool_euler = True # deactivates interaction with user and just computes both test and train with a successful configuration
 
 # debug parameter
-debug = False  # just computes the first image of whatever set is selected
+debug = True  # just computes the first image of whatever set is selected
 number_test_images = 1
 
 modes = ["avg", "vector", "grad", "custom"]
 mode = ""
 
-root_dir = os.path.dirname(os.path.realpath(__file__ + "/../"))
+root_dir = os.path.dirname(os.path.realpath(__file__))
 
 test_dir = "set_test_segmented"
 train_dir = "set_train_segmented"
@@ -136,13 +136,12 @@ def extract_data(kind, current_number, total_datapoints, histogram=True):
     if debug:
         image_num = number_test_images
 
-    out_file = open(mode + "_" + kind + "_speed.pickle", 'w')
-    if mode == "grad":
-    	out_file_histo1 = open(mode + "_" + kind + "_histogram1.pickle", 'w')
-    	out_file_histo2 = open(mode + "_" + kind + "_histogram2.pickle", 'w')
-    	out_file_histo3 = open(mode + "_" + kind + "_histogram3.pickle", 'w')
-    else:
-    	out_file_histo = open(mode + "_" + kind + "_histogram_speed.pickle", 'w')
+    out_file = open(mode + "_" + kind + ".pickle", 'w')
+
+    if mode == "custom":
+        out_file4 = open('short_histogram100_' + kind + '.pickle', 'w')
+    
+    out_file_histo = open(mode + '_histogram_' + kind + '.pickle', 'w')
 
     for i in range(image_num):
         if kind == "train":
@@ -158,43 +157,6 @@ def extract_data(kind, current_number, total_datapoints, histogram=True):
             X_3d = process_img(image, True)
             X = [elm for matrix in X_3d for vec in matrix for elm in vec]
             X_histogram = [0] * 1000
-        elif mode == "grad":
-            X_3d = process_img(image, False)
-            X = ndimage.filters.laplace(np.array(X_3d))
-            X_grad = skifilter.laplace(skifilter.gaussian(np.array(X_3d), 1))
-            X_sobel = [skifilter.sobel(img) for img in X_3d]
-
-            hist = [0] * 10000
-            too_big = 0
-            for elm in [elm for matrix in X for vec in matrix for elm in vec]:
-            	if abs(elm) < 10000:
-            		hist[abs(elm)] += 1
-            	else:
-            		too_big += 1
-            		#print "too big histo entry, X"
-            sPickle.s_dump_elt(hist, out_file_histo1)
-            if too_big > 0:
-            	print "X had " + str(too_big) + " too hight gradients"
-
-            hist = [0] * 10000
-            for elm in [elm for matrix in X_sobel for vec in matrix for elm in vec]:
-            	v = abs(elm) * 100000
-            	if v < 10000:
-            		hist[int(v)] += 1
-            	else:
-            		print "too big histo entry, X_soebel"
-            sPickle.s_dump_elt(hist, out_file_histo2)
-
-            hist = [0] * 10000
-            for elm in [elm for matrix in X_grad for vec in matrix for elm in vec]:
-            	v = abs(elm) * 100000
-            	if v < 10000:
-            		hist[int(v)] += 1
-            	else:
-            		print "too big histo entry, X_soebel"
-            sPickle.s_dump_elt(hist, out_file_histo3)
-
-            #plt.show()
         elif mode == "custom":
             X_3d = process_img(image, True)
             X = [elm for matrix in X_3d for vec in matrix for elm in vec]
@@ -213,11 +175,8 @@ def extract_data(kind, current_number, total_datapoints, histogram=True):
                     X = [(sum(vec) / float(len(vec))) for matrix in X_3d for vec in matrix]
                 elif mode == "vector":
                     X = [elm for matrix in X_3d for vec in matrix for elm in vec]
-                elif mode == "grad":
-                    print "something unexpected happend, not same length vector"
-                    exit(5)
                 elif mode == "custom":
-                	X = [elm for matrix in X_3d for vec in matrix for elm in vec]
+                    X = [elm for matrix in X_3d for vec in matrix for elm in vec]
                 else:
                     print "unexpecter error: unsupported mode. exiting.."
 
@@ -225,39 +184,28 @@ def extract_data(kind, current_number, total_datapoints, histogram=True):
 
         # make histogram
 
-        if mode == "grad":
-            irelevant = 0
-        else:
-     		for elm in X:
-     			if elm > 5000:
-     				print elm
-     			else:
-        			X_histogram[int(elm)] += 1
-        	sPickle.s_dump_elt(X_histogram, out_file_histo)
+        for elm in X:
+            if elm > 5000:
+                print elm
+            else:
+                X_histogram[int(elm)] += 1
+        sPickle.s_dump_elt(X_histogram, out_file_histo)
 
         if mode == "custom":
-        	out_file4 = open('../data/custom_shorthisto100_fast_test.pickle', 'w')
-
-			for elm in sPickle.s_load(open('../data/custom_histogram_fast_test.pickle')):
-				X = [0] * 100
-				i = 0
-				for itm in elm:
-					X[i / 60] += itm
-					i += 1
-				sPickle.s_dump_elt(X, out_file)
-			out_file4.close()
+            X_sh = [0] * 100
+            index = 0
+            for itm in X_histogram:
+                X_sh[i / 60] += itm
+                index += 1
+            sPickle.s_dump_elt(X_sh, out_file4)
 
         current_number += 1
         print "Finished file " + str(i+1) + "; " + "%.2f" % ((current_number/float(total_datapoints)) * 100) + "%"
         del image
 
     out_file.close()
-    if mode == "grad":
-    	out_file_histo1.close()
-    	out_file_histo2.close()
-    	out_file_histo3.close()
-    else:
-		out_file_histo.close()
+    out_file_histo.close()
+    out_file4.close()
 
     return current_number
 

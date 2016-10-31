@@ -24,7 +24,7 @@ MODEL_NAME = ""
 GRID_SEARCH = False
 FILE_NAME = ""
 HISTOGRAM = False
-DATA_FOLDER = "../data/"
+DATA_FOLDER = ""
 
 MAX_VALUE = 4418
 
@@ -38,7 +38,7 @@ def generate_histogram(vector):
 def read_data(filename):
     global MAX_VALUE
     global HISTOGRAM
-    print "Loading " + filename + "..."
+    #print "Loading " + filename + "..."
 
     matrix = []
     i = 0
@@ -191,12 +191,11 @@ if __name__ == "__main__":
     models = ['lasso', 'svm_rbf', 'svm_poly', 'ridge_rbf', 'ridge_poly']
     if FOR_ASSISTANTS:
         GRID_SEARCH = False
-
-        ######################################################### TODO
-        FILE_NAME = ""
+        FILE_NAME = "short_histogram100"
         HISTOGRAM = False
 
         do_lasso()
+        exit()
 
     if len(sys.argv) <= 1:
         print "You need to provide a model type"
