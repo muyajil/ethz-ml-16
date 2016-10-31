@@ -8,8 +8,6 @@ from scipy import ndimage
 #from skimage import exposure as skex
 
 '''
-Preprocessing with FAST () to correcting spatial intensity variations. Then run this script on the "restored input" output of FAST.
-
 Fist the MRI picture were processed with the FAST command-line program. This
 yields different outputfiles, we only use the "Restored input" image, which is
 again a MRI picture but corrected for spatial intensity variations (bias fields).
@@ -30,7 +28,7 @@ our submission.
 bool_euler = True # deactivates interaction with user and just computes both test and train with a successful configuration
 
 # debug parameter
-debug = True  # just computes the first image of whatever set is selected
+debug = False  # just computes the first image of whatever set is selected
 number_test_images = 1
 
 modes = ["avg", "vector", "grad", "custom"]
@@ -140,7 +138,7 @@ def extract_data(kind, current_number, total_datapoints, histogram=True):
 
     if mode == "custom":
         out_file4 = open('short_histogram100_' + kind + '.pickle', 'w')
-    
+
     out_file_histo = open(mode + '_histogram_' + kind + '.pickle', 'w')
 
     for i in range(image_num):

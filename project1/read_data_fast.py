@@ -8,7 +8,7 @@ from scipy import ndimage
 #from skimage import exposure as skex
 
 '''
-Preprocessing with FAST () to correcting spatial intensity variations. Then run this script on the "restored input" output of FAST.
+Preprocessing with FAST to correcting spatial intensity variations. Then run this script on the "restored input" output of FAST.
 
 Fist the MRI picture were processed with the FAST command-line program. This
 yields different outputfiles, we only use the "Restored input" image, which is
