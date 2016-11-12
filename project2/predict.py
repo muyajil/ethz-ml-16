@@ -33,7 +33,6 @@ def load_img(kind, number):
 def process_img(kind, index):
     X = []
     X_3d = load_img(kind, index)
-    print "done loading picture " + str(index)
 
     # process img and store in 'X'
     # TODO
@@ -57,7 +56,7 @@ def extract_data(kind):
 
     feature_matrix = []
 
-    file_name = "test" # change test to descriptive name
+    file_name = kind + "_test.spickle" # change test to descriptive name
     out_file = os.getcwd() + "/" + res_folder + file_name
 
     if os.path.isfile(out_file):
@@ -68,7 +67,7 @@ def extract_data(kind):
     else:
         print "No file \'" + file_name + "\' found, starting to read data..."
 
-        # multiprocessing for reading data
+        # parallel reading data
         feature_matrix = range(1, image_num + 1)
         p = Pool(5)
         p.map(globals()["process_img_" + str(kind)], feature_matrix)
@@ -90,10 +89,29 @@ def read_targets():
 
     return targets
 
+def generate_submission(Y_test, Name):
+    filename = os.getcwd() + "/Submissions/submission_" + Name + ".csv"
+    if os.path.isfile(filename):
+        generate_submission(Y_test, Name + "1") # TODO change name to avoid colisions more elegant
+        return
+    with open(filename, "w") as file:
+                file.write("Id,Prediction\n")
+                for i in range(len(Y_test)):
+                        file.write(str(i+1) + "," + str(int(Y_test[i])) + "\n")
+                file.close()
+
 def main():
-    # First extract feature matrix from train set
+    # First extract feature matrix from train set and load targets
     X_train = extract_data("train")
     Y_train = read_targets()
 
+    # TODO Train models
+
+    # Extract feature matrix from test set
+    X_test = extract_data("test")
+
+    # Make predictions for the test set and write it to a file
+    Y_test = [] # TODO predict
+    generate_submission(Y_test, "test")
 if __name__ == "__main__":
     main()
