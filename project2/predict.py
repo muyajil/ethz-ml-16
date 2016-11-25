@@ -15,7 +15,7 @@ DEBUG = False
 debug_num = 10
 
 # params for aggregating
-cube_number = 3
+cube_number = 5
 MAX = 4000
 histogram_bins = 50
 histogram_range = (1, 4001)
@@ -87,7 +87,7 @@ progress_tracker = 0
 lock = threading.Lock()
 
 def process_img_train(index):
-    global progress_tracker
+    global progress_tracker, lock
     X_train = process_img("train", index)
     lock.acquire()
     try:
@@ -98,7 +98,7 @@ def process_img_train(index):
     return X_train
 
 def process_img_test(index):
-    global progress_tracker
+    global progress_tracker, lock
     X_test = process_img("test", index)
     lock.acquire()
     try:
@@ -207,7 +207,7 @@ def main():
     # Train models
     estimator, params = svcRBFGridsearch(X_train, Y_train)
     #estimator = svcPOLYGridSearch(X_train, Y_train)
-    # estimator = svcSIGMOIDGridSearch(X_train, Y_train)
+    #estimator = svcSIGMOIDGridSearch(X_train, Y_train)
 
     # Extract feature matrix from test set
     X_test = extract_data("test")
