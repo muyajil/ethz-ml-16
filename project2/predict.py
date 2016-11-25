@@ -145,9 +145,6 @@ def main():
     # First extract feature matrix from train set and load targets
     X_train = extract_data("train")
     Y_train = read_targets()
-    print len(X_train)
-    # HACK
-    exit()
 
     # TODO Train models
 
