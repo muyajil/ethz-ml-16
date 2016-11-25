@@ -5,13 +5,14 @@ import nibabel as nib
 import sPickle # -> https://github.com/pgbovine/streaming-pickle
 import sklearn.grid_search as skgs
 import sklearn.svm as sksvm
-from multiprocessing import Pool
+import multiprocessing
+from functools import partial
 import threading
 from time import time
 
 # Execution flags
 SUBMISSION_VERSION = False # True for final submission -> no output or customizability
-DEBUG = False
+DEBUG = True
 debug_num = 10
 
 # params for aggregating
@@ -83,34 +84,18 @@ def process_img(kind, index):
                 X.extend(np.histogram(temp, bins=histogram_bins, range=histogram_range)[0])
     return X # 1D feature vector
 
-progress_tracker = 0
-lock = threading.Lock()
-
 def process_img_train(index):
-    global progress_tracker, lock
     X_train = process_img("train", index)
-    lock.acquire()
-    try:
-        progress_tracker += 1
-        print "Finished reading file train_" + str(index) + "; " + "%.2f" % ((progress_tracker/float(data_points_train)) * 100) + "%"
-    finally:
-        lock.release()
+    #print "Finished reading file train_" + str(index) + "; " + "%.2f" % ((progress_tracker/float(data_points_train)) * 100) + "%"
     return X_train
 
 def process_img_test(index):
-    global progress_tracker, lock
     X_test = process_img("test", index)
-    lock.acquire()
-    try:
-        progress_tracker += 1
-        print "Finished reading file test_" + str(index) + "; " + "%.2f" % ((progress_tracker/float(data_points_test)) * 100) + "%"
-    finally:
-        lock.release()
+    #print "Finished reading file test_" + str(index) + "; " + "%.2f" % ((progress_tracker/float(data_points_test)) * 100) + "%"
     return X_test
 
 def extract_data(kind):
-    global computational_cores, progress_tracker
-    progress_tracker = 0
+    global computational_cores
     image_num = globals()["data_points_" + kind]
 
     file_name = kind + "_" + PREPROCESSING_NAME + ".spickle" # change test to descriptive name
@@ -127,15 +112,17 @@ def extract_data(kind):
         print "\'" + file_name + "\' found, loading data..."
         for elm in sPickle.s_load(open(out_file)):
             feature_matrix.append(elm)
-            #print feature_matrix[len(feature_matrix) - 1][10]
         print "done loading " + kind + " data"
     else:
         print "No file \'" + file_name + "\' found, starting to read data..."
 
         # parallel reading data
         pic_num = range(1, image_num + 1)
-        p = Pool(computational_cores)
-        feature_matrix = p.map(globals()["process_img_" + str(kind)], pic_num)
+        lock = multiprocessing.Lock()
+        pool = multiprocessing.Pool(computational_cores)
+        feature_matrix = pool.map(globals()["process_img_" + str(kind)], pic_num)
+        pool.close()
+        pool.join()
 
         # write data to file
         out_file = open(out_file, 'w')
