@@ -3,19 +3,20 @@ import sys
 import numpy as np
 import nibabel as nib
 import sPickle # -> https://github.com/pgbovine/streaming-pickle
-import sklearn
+import sklearn.grid_search as skgs
+import sklearn.svm as sksvm
 from multiprocessing import Pool
+import threading
 from time import time
 
 # Execution flags
 SUBMISSION_VERSION = False # True for final submission -> no output or customizability
-DEBUG = True
-debug_num = 2
-
-SUBMISSION_NAME = "Kind"
+DEBUG = False
+debug_num = 10
 
 # params for aggregating
-MAX = 0
+cube_number = 3
+MAX = 4000
 histogram_bins = 50
 histogram_range = (1, 4001)
 
@@ -24,7 +25,6 @@ data_points_train = 278
 data_points_test = 138
 res_folder = "Out/"
 computational_cores = 5
-cube_number = 3
 
 # constants for cutting cube into right shape
 x_start = 20
@@ -33,6 +33,10 @@ y_start = 20
 y_end = 188
 z_start = 20
 z_end = 156
+
+# Output file names
+SUBMISSION_NAME = "not_defined"
+PREPROCESSING_NAME = "cube-histo-" + str(cube_number)
 
 def load_img(kind, number):
     img = nib.load("set_" + kind + "/" + kind + "_" + str(number) + ".nii")
@@ -52,10 +56,8 @@ def process_img(kind, index):
     X = []
     X_3d = np.array(load_img(kind, index))
 
-    # process img and store in 'X'
-    # TODO
+    # XXX process img and store in 'X'
     X_3d = X_3d[x_start:x_end, y_start:y_end, z_start:z_end]
-    #print X_3d.shape
 
     XX, YY, ZZ = X_3d.shape
 
@@ -81,40 +83,59 @@ def process_img(kind, index):
                 X.extend(np.histogram(temp, bins=histogram_bins, range=histogram_range)[0])
     return X # 1D feature vector
 
+progress_tracker = 0
+lock = threading.Lock()
+
 def process_img_train(index):
+    global progress_tracker
     X_train = process_img("train", index)
-    print "Finished reading file train_" + str(index) + "; " + "%.2f" % ((index/float(data_points_train)) * 100) + "%"
+    lock.acquire()
+    try:
+        progress_tracker += 1
+        print "Finished reading file train_" + str(index) + "; " + "%.2f" % ((progress_tracker/float(data_points_train)) * 100) + "%"
+    finally:
+        lock.release()
     return X_train
 
 def process_img_test(index):
+    global progress_tracker
     X_test = process_img("test", index)
-    print "Finished reading file test_" + str(index) + "; " + "%.2f" % ((index/float(data_points_test)) * 100) + "%"
+    lock.acquire()
+    try:
+        progress_tracker += 1
+        print "Finished reading file test_" + str(index) + "; " + "%.2f" % ((progress_tracker/float(data_points_test)) * 100) + "%"
+    finally:
+        lock.release()
     return X_test
 
 def extract_data(kind):
-    global computational_cores
+    global computational_cores, progress_tracker
+    progress_tracker = 0
     image_num = globals()["data_points_" + kind]
+
+    file_name = kind + "_" + PREPROCESSING_NAME + ".spickle" # change test to descriptive name
+
     if DEBUG:
+        file_name = "debug_" + kind + "_" + PREPROCESSING_NAME + ".spickle"
         image_num = debug_num
         computational_cores = min(debug_num, computational_cores)
 
     feature_matrix = []
-
-    file_name = kind + "_test.spickle" # change test to descriptive name
     out_file = os.getcwd() + "/" + res_folder + file_name
 
-    if os.path.isfile(out_file):
+    if os.path.isfile(out_file) and not DEBUG:
         print "\'" + file_name + "\' found, loading data..."
         for elm in sPickle.s_load(open(out_file)):
             feature_matrix.append(elm)
+            #print feature_matrix[len(feature_matrix) - 1][10]
         print "done loading " + kind + " data"
     else:
         print "No file \'" + file_name + "\' found, starting to read data..."
 
         # parallel reading data
-        feature_matrix = range(1, image_num + 1)
+        pic_num = range(1, image_num + 1)
         p = Pool(computational_cores)
-        feature_matrix = p.map(globals()["process_img_" + str(kind)], feature_matrix)
+        feature_matrix = p.map(globals()["process_img_" + str(kind)], pic_num)
 
         # write data to file
         out_file = open(out_file, 'w')
@@ -141,48 +162,58 @@ def generate_submission(Y_test, Name, param=""):
     with open(filename, "w") as file:
                 file.write("Id,Prediction\n")
                 for i in range(len(Y_test)):
-                        file.write(str(i+1) + "," + str(int(Y_test[i])) + "\n")
+                    file.write(str(i+1) + "," + str(Y_test[i][1]) + "\n")
                 file.close()
 
 def svcSIGMOIDGridSearch(X, y):
+    global SUBMISSION_NAME
+    SUBMISSION_NAME = "SVC_SIG"
     param_grid = [{'C': np.logspace(-3,20,2), 'gamma': np.logspace(-5,3,20), 'kernel': ['sigmoid']}]
-    grid_search = skgs.GridSearchCV(sksvm.SVC(), param_grid, cv=5)
+    grid_search = skgs.GridSearchCV(sksvm.SVC(probability=True), param_grid, cv=5, verbose=5)
     grid_search.fit(X,y)
     print 'Best Score of Grid Search: ' + str(grid_search.best_score_)
     print 'Best Params of Grid Search: ' + str(grid_search.best_params_)
-    return grid_search.best_estimator_
+    return (grid_search.best_estimator_, str(grid_search.best_params_))
 
 def svcPOLYGridSearch(X, y):
+    global SUBMISSION_NAME
+    SUBMISSION_NAME = "SVC_POLY"
     param_grid = [{'degree': np.linspace(1,5,5),'C': np.logspace(-3.20,10), 'gamma': np.logspace(-5,3,20), 'kernel': ['poly']}]
-    grid_search = skgs.GridSearchCV(sksvm.SVC(), param_grid, cv=5)
+    grid_search = skgs.GridSearchCV(sksvm.SVC(probability=True), param_grid, cv=5, verbose=5)
     grid_search.fit(X,y)
     print 'Best Score of Grid Search: ' + str(grid_search.best_score_)
     print 'Best Params of Grid Search: ' + str(grid_search.best_params_)
-    return grid_search.best_estimator_
+    return (grid_search.best_estimator_, str(grid_search.best_params_))
 
 def svcRBFGridsearch(X, y):
-    param_grid = [{'C': np.logspace(-2,1,3), 'probability':[True, False], 'kernel': ['rbf']}]
-    grid_search = skgs.GridSearchCV(sksvm.SVC(), param_grid, cv=5)
+    global SUBMISSION_NAME
+    SUBMISSION_NAME = "SVC_RBF"
+    param_grid = [{'C': np.logspace(1,4,10), 'kernel': ['rbf'], 'gamma': np.logspace(-10,-4,10)}]
+    grid_search = skgs.GridSearchCV(sksvm.SVC(probability=True, class_weight='balanced'), param_grid, cv=5, verbose=5)
     grid_search.fit(X,y)
     print 'Best Score of Grid Search: ' + str(grid_search.best_score_)
     print 'Best Params of Grid Search: ' + str(grid_search.best_params_)
-    return grid_search.best_estimator_
+    return (grid_search.best_estimator_, str(grid_search.best_params_))
 
 def main():
     # First extract feature matrix from train set and load targets
+    if(DEBUG):
+        pass
+
     X_train = extract_data("train")
     Y_train = read_targets()
+    print sum(Y_train)
 
     # Train models
-    estimator = svcRBFGridsearch(X_train, Y_train)
-    # estimator = svcPOLYGridSearch(X_train, Y_train)
+    estimator, params = svcRBFGridsearch(X_train, Y_train)
+    #estimator = svcPOLYGridSearch(X_train, Y_train)
     # estimator = svcSIGMOIDGridSearch(X_train, Y_train)
 
     # Extract feature matrix from test set
     X_test = extract_data("test")
 
     # Make predictions for the test set and write it to a file
-    Y_test = estimator.predict(X_test)
+    Y_test = estimator.predict_proba(X_test)
     generate_submission(Y_test, SUBMISSION_NAME, params)
 
 if __name__ == "__main__":
