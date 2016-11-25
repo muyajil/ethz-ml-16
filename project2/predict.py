@@ -141,18 +141,46 @@ def generate_submission(Y_test, Name):
                         file.write(str(i+1) + "," + str(int(Y_test[i])) + "\n")
                 file.close()
 
+def svcSIGMOIDGridSearch(X, y):
+    param_grid = [{'C': np.logspace(-3,20,2), 'gamma': np.logspace(-5,3,20), 'kernel': ['sigmoid']}]
+    grid_search = skgs.GridSearchCV(sksvm.SVC(), param_grid, cv=5)
+    grid_search.fit(X,y)
+    print 'Best Score of Grid Search: ' + str(grid_search.best_score_)
+    print 'Best Params of Grid Search: ' + str(grid_search.best_params_)
+    return grid_search.best_estimator_
+
+def svcPOLYGridSearch(X, y):
+    param_grid = [{'degree': np.linspace(1,5,5),'C': np.logspace(-3.20,10), 'gamma': np.logspace(-5,3,20), 'kernel': ['poly']}]
+    grid_search = skgs.GridSearchCV(sksvm.SVC(), param_grid, cv=5)
+    grid_search.fit(X,y)
+    print 'Best Score of Grid Search: ' + str(grid_search.best_score_)
+    print 'Best Params of Grid Search: ' + str(grid_search.best_params_)
+    return grid_search.best_estimator_
+
+def svcRBFGridsearch(X, y):
+    param_grid = [{'C': np.logspace(-2,1,3), 'probability':[True, False], 'kernel': ['rbf']}]
+    grid_search = skgs.GridSearchCV(sksvm.SVC(), param_grid, cv=5)
+    grid_search.fit(X,y)
+    print 'Best Score of Grid Search: ' + str(grid_search.best_score_)
+    print 'Best Params of Grid Search: ' + str(grid_search.best_params_)
+    return grid_search.best_estimator_
+
 def main():
     # First extract feature matrix from train set and load targets
     X_train = extract_data("train")
     Y_train = read_targets()
 
-    # TODO Train models
+    # Train models
+    estimator = svcRBFGridsearch(X_train, Y_train)
+    # estimator = svcPOLYGridSearch(X_train, Y_train)
+    # estimator = svcSIGMOIDGridSearch(X_train, Y_train)
 
     # Extract feature matrix from test set
     X_test = extract_data("test")
 
     # Make predictions for the test set and write it to a file
-    Y_test = [] # TODO predict
+    Y_test = estimator.predict(X_test)
     generate_submission(Y_test, "test")
+
 if __name__ == "__main__":
     main()
