@@ -5,11 +5,14 @@ import nibabel as nib
 import sPickle # -> https://github.com/pgbovine/streaming-pickle
 import sklearn
 from multiprocessing import Pool
+from time import time
 
 # Execution flags
 SUBMISSION_VERSION = False # True for final submission -> no output or customizability
 DEBUG = True
 debug_num = 2
+
+SUBMISSION_NAME = "Kind"
 
 # params for aggregating
 MAX = 0
@@ -79,13 +82,13 @@ def process_img(kind, index):
     return X # 1D feature vector
 
 def process_img_train(index):
-    X_train = process_img("train", index[0])
-    print "Finished reading file train_" + str(index[0]) + "; " + "%.2f" % ((index[0]/float(data_points_train)) * 100) + "%"
+    X_train = process_img("train", index)
+    print "Finished reading file train_" + str(index) + "; " + "%.2f" % ((index/float(data_points_train)) * 100) + "%"
     return X_train
 
 def process_img_test(index):
-    X_test = process_img("test", index[0])
-    print "Finished reading file test_" + str(index[0]) + "; " + "%.2f" % ((index[0]/float(data_points_test)) * 100) + "%"
+    X_test = process_img("test", index)
+    print "Finished reading file test_" + str(index) + "; " + "%.2f" % ((index/float(data_points_test)) * 100) + "%"
     return X_test
 
 def extract_data(kind):
@@ -109,7 +112,7 @@ def extract_data(kind):
         print "No file \'" + file_name + "\' found, starting to read data..."
 
         # parallel reading data
-        feature_matrix = [[ls] for ls in range(1, image_num + 1)]
+        feature_matrix = range(1, image_num + 1)
         p = Pool(computational_cores)
         feature_matrix = p.map(globals()["process_img_" + str(kind)], feature_matrix)
 
@@ -130,8 +133,8 @@ def read_targets():
 
     return targets
 
-def generate_submission(Y_test, Name):
-    filename = os.getcwd() + "/Submissions/submission_" + Name + ".csv"
+def generate_submission(Y_test, Name, param=""):
+    filename = os.getcwd() + "/Submissions/" + str(int(time())) + "_" + Name + "_" + param + ".csv"
     if os.path.isfile(filename):
         generate_submission(Y_test, Name + "1") # TODO change name to avoid colisions more elegant
         return
@@ -180,7 +183,7 @@ def main():
 
     # Make predictions for the test set and write it to a file
     Y_test = estimator.predict(X_test)
-    generate_submission(Y_test, "test")
+    generate_submission(Y_test, SUBMISSION_NAME, params)
 
 if __name__ == "__main__":
     main()
