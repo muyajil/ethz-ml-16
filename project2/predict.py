@@ -15,7 +15,7 @@ DEBUG = False
 debug_num = 10
 
 # params for aggregating
-cube_number = 9
+cube_number = 2
 histogram_bins = 50
 histogram_range = (1, 4001)
 
@@ -23,7 +23,7 @@ histogram_range = (1, 4001)
 data_points_train = 278
 data_points_test = 138
 res_folder = "Out/"
-computational_cores = 7
+computational_cores = 4
 
 # constants for cutting cube into right shape
 x_start = 20
@@ -34,7 +34,7 @@ z_start = 20
 z_end = 156
 
 # Output file names
-PREPROCESSING_NAME = "cube-histo-" + str(cube_number)
+PREPROCESSING_NAME = "cube-histo-" + str(cube_number) + "-" + str(histogram_bins)
 SUBMISSION_NAME = "not_defined"
 
 def load_img(kind, number):
@@ -147,6 +147,11 @@ def generate_submission(Y_test, Name, params="", score="xxx"):
                 file.close()
     print "Wrote submission file '" + filename + "'."
 
+def make_folder(foldername):
+    folder = os.getcwd() + "/" + foldername + "/"
+    if not os.path.exists(folder):
+        os.makedirs(folder)
+
 def svcSIGMOIDGridSearch(X, y):
     global SUBMISSION_NAME
     SUBMISSION_NAME = "SVC_SIG"
@@ -170,14 +175,18 @@ def svcPOLYGridSearch(X, y):
 def svcRBFGridsearch(X, y):
     global SUBMISSION_NAME
     SUBMISSION_NAME = "SVC_RBF"
-    param_grid = [{'C': np.logspace(0,4,100), 'kernel': ['rbf'], 'gamma': np.logspace(-12,-4,100)}]
-    grid_search = skgs.GridSearchCV(sksvm.SVC(probability=True, class_weight='balanced'), param_grid, cv=5, verbose=2)
+    param_grid = [{'C': np.logspace(0,4,5), 'kernel': ['rbf'], 'gamma': np.logspace(-12,-4,5)}]
+    grid_search = skgs.GridSearchCV(sksvm.SVC(probability=True, class_weight='balanced'), param_grid, cv=5, verbose=5)
     grid_search.fit(X,y)
     print 'Best Score of Grid Search: ' + str(grid_search.best_score_)
     print 'Best Params of Grid Search: ' + str(grid_search.best_params_)
     return (grid_search.best_estimator_, grid_search.best_params_, grid_search.best_score_)
 
 def main():
+    # make sure folders exist so that output can be written
+    make_folder("Submissions")
+    make_folder("Out")
+
     # First extract feature matrix from train set and load targets
     X_train = extract_data("train")
     Y_train = read_targets()
