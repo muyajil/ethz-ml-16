@@ -15,7 +15,7 @@ DEBUG = False
 debug_num = 10
 
 # params for aggregating
-cube_number = 2
+cube_number = 5
 histogram_bins = 50
 histogram_range = (1, 4001)
 
@@ -112,7 +112,6 @@ def extract_data(kind):
 
         # parallel reading data
         pic_num = range(1, image_num + 1)
-        lock = multiprocessing.Lock()
         pool = multiprocessing.Pool(computational_cores)
         feature_matrix = pool.map(globals()["process_img_" + str(kind)], pic_num)
         pool.close()
@@ -138,13 +137,13 @@ def generate_submission(Y_test, Name, params="", score="xxx"):
     par = [str(k) + "=" + str(v) for k,v in zip(params.keys(), params.values())]
     filename = os.getcwd() + "/Submissions/" + str(int(time())) + "_" + PREPROCESSING_NAME + "_" + Name + "_" + "score=" + str(score) + "_" + '_'.join(par) + ".csv"
     if os.path.isfile(filename):
-        generate_submission(Y_test, Name + "1") # TODO change name to avoid colisions more elegant
+        generate_submission(Y_test, Name + "1", params, score) # TODO change name to avoid colisions more elegant
         return
     with open(filename, "w") as file:
-                file.write("Id,Prediction\n")
-                for i in range(len(Y_test)):
-                    file.write(str(i+1) + "," + str(Y_test[i][1]) + "\n")
-                file.close()
+        file.write("Id,Prediction\n")
+        for i in range(len(Y_test)):
+            file.write(str(i+1) + "," + str(Y_test[i][1]) + "\n")
+        file.close()
     print "Wrote submission file '" + filename + "'."
 
 def make_folder(foldername):
@@ -175,12 +174,15 @@ def svcPOLYGridSearch(X, y):
 def svcRBFGridsearch(X, y):
     global SUBMISSION_NAME
     SUBMISSION_NAME = "SVC_RBF"
-    param_grid = [{'C': np.logspace(0,4,5), 'kernel': ['rbf'], 'gamma': np.logspace(-12,-4,5)}]
+    param_grid = [{'C': np.logspace(0,4,10), 'kernel': ['rbf'], 'gamma': np.logspace(-12,-4,10)}]
     grid_search = skgs.GridSearchCV(sksvm.SVC(probability=True, class_weight='balanced'), param_grid, cv=5, verbose=5)
     grid_search.fit(X,y)
     print 'Best Score of Grid Search: ' + str(grid_search.best_score_)
     print 'Best Params of Grid Search: ' + str(grid_search.best_params_)
     return (grid_search.best_estimator_, grid_search.best_params_, grid_search.best_score_)
+
+def partial_svc(a):
+    return svcRBFGridsearch(a[0], a[1])
 
 def main():
     # make sure folders exist so that output can be written
@@ -193,16 +195,38 @@ def main():
 
     # Train models
     print "Starting to train..."
-    estimator, params, score = svcRBFGridsearch(X_train, Y_train)
-    #estimator = svcPOLYGridSearch(X_train, Y_train)
-    #estimator = svcSIGMOIDGridSearch(X_train, Y_train)
+    #estimator, params, score = svcRBFGridsearch(X_train, Y_train)
+    #estimator, params, score = svcPOLYGridSearch(X_train, Y_train)
+    #estimator, params, score = svcSIGMOIDGridSearch(X_train, Y_train)
+
+    # distributed learning
+    X_train = np.array(X_train)
+    split_X_train = [X_train[:, cube_number*i:(cube_number**2)*histogram_bins*(i+1)] for i in range(cube_number)]
+
+    pool = multiprocessing.Pool(computational_cores)
+    learner_stuff = pool.map(partial_svc, zip(split_X_train, [Y_train for i in range(cube_number)]))
+
+    del X_train, Y_train
 
     # Extract feature matrix from test set
     X_test = extract_data("test")
 
     # Make predictions for the test set and write it to a file
     print "Making predictions."
-    Y_test = estimator.predict_proba(X_test)
+    #Y_test = estimator.predict_proba(X_test)
+
+    X_test = np.array(X_test)
+    Y_test = np.zeros((data_points_test, 2))
+    split_X_test = [X_test[:, cube_number*i:(cube_number**2)*histogram_bins*(i+1)] for i in range(cube_number)]
+    for i in range(cube_number):
+        temp = learner_stuff[i][0].predict_proba(split_X_test[i])
+        Y_test = np.add(Y_test, temp)
+    Y_test = Y_test / cube_number
+
+    params = {}
+    score = 0
+    SUBMISSION_NAME = "parallel-svc"
+
     generate_submission(Y_test, SUBMISSION_NAME, params, score)
 
     print "\n\nDone. Have a good night."
