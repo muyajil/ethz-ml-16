@@ -6,18 +6,16 @@ import sPickle # -> https://github.com/pgbovine/streaming-pickle
 import sklearn.grid_search as skgs
 import sklearn.svm as sksvm
 import multiprocessing
-from functools import partial
 import threading
 from time import time
 
 # Execution flags
 SUBMISSION_VERSION = False # True for final submission -> no output or customizability
-DEBUG = True
+DEBUG = False
 debug_num = 10
 
 # params for aggregating
-cube_number = 5
-MAX = 4000
+cube_number = 9
 histogram_bins = 50
 histogram_range = (1, 4001)
 
@@ -25,7 +23,7 @@ histogram_range = (1, 4001)
 data_points_train = 278
 data_points_test = 138
 res_folder = "Out/"
-computational_cores = 5
+computational_cores = 7
 
 # constants for cutting cube into right shape
 x_start = 20
@@ -36,8 +34,8 @@ z_start = 20
 z_end = 156
 
 # Output file names
-SUBMISSION_NAME = "not_defined"
 PREPROCESSING_NAME = "cube-histo-" + str(cube_number)
+SUBMISSION_NAME = "not_defined"
 
 def load_img(kind, number):
     img = nib.load("set_" + kind + "/" + kind + "_" + str(number) + ".nii")
@@ -61,12 +59,9 @@ def process_img(kind, index):
     X_3d = X_3d[x_start:x_end, y_start:y_end, z_start:z_end]
 
     XX, YY, ZZ = X_3d.shape
-
     X_step = XX/cube_number
     Y_step = YY/cube_number
     Z_step = ZZ/cube_number
-
-    X = []
 
     for x in range(cube_number):
         x_a = x*X_step
@@ -78,7 +73,6 @@ def process_img(kind, index):
                 z_a = z*Z_step
                 z_b = min((z+1)*Z_step - 1, z_end)
                 cube = X_3d[x_a:x_b, y_a:y_b, z_a:z_b]
-                #print str(x_a) + "  " + str(x_b) + "," + str(y_a) + "  " + str(y_b) + "," + str(z_a) + "  " + str(z_b)
 
                 temp = cube.flatten()
                 X.extend(np.histogram(temp, bins=histogram_bins, range=histogram_range)[0])
@@ -98,7 +92,7 @@ def extract_data(kind):
     global computational_cores
     image_num = globals()["data_points_" + kind]
 
-    file_name = kind + "_" + PREPROCESSING_NAME + ".spickle" # change test to descriptive name
+    file_name = kind + "_" + PREPROCESSING_NAME + ".spickle"
 
     if DEBUG:
         file_name = "debug_" + kind + "_" + PREPROCESSING_NAME + ".spickle"
@@ -138,11 +132,11 @@ def read_targets():
 
     if DEBUG:
         return targets[:debug_num]
-
     return targets
 
-def generate_submission(Y_test, Name, param=""):
-    filename = os.getcwd() + "/Submissions/" + str(int(time())) + "_" + Name + "_" + param + ".csv"
+def generate_submission(Y_test, Name, params="", score="xxx"):
+    par = [str(k) + "=" + str(v) for k,v in zip(params.keys(), params.values())]
+    filename = os.getcwd() + "/Submissions/" + str(int(time())) + "_" + PREPROCESSING_NAME + "_" + Name + "_" + "score=" + str(score) + "_" + '_'.join(par) + ".csv"
     if os.path.isfile(filename):
         generate_submission(Y_test, Name + "1") # TODO change name to avoid colisions more elegant
         return
@@ -151,6 +145,7 @@ def generate_submission(Y_test, Name, param=""):
                 for i in range(len(Y_test)):
                     file.write(str(i+1) + "," + str(Y_test[i][1]) + "\n")
                 file.close()
+    print "Wrote submission file '" + filename + "'."
 
 def svcSIGMOIDGridSearch(X, y):
     global SUBMISSION_NAME
@@ -160,7 +155,7 @@ def svcSIGMOIDGridSearch(X, y):
     grid_search.fit(X,y)
     print 'Best Score of Grid Search: ' + str(grid_search.best_score_)
     print 'Best Params of Grid Search: ' + str(grid_search.best_params_)
-    return (grid_search.best_estimator_, str(grid_search.best_params_))
+    return (grid_search.best_estimator_, grid_search.best_params_)
 
 def svcPOLYGridSearch(X, y):
     global SUBMISSION_NAME
@@ -170,29 +165,26 @@ def svcPOLYGridSearch(X, y):
     grid_search.fit(X,y)
     print 'Best Score of Grid Search: ' + str(grid_search.best_score_)
     print 'Best Params of Grid Search: ' + str(grid_search.best_params_)
-    return (grid_search.best_estimator_, str(grid_search.best_params_))
+    return (grid_search.best_estimator_, grid_search.best_params_)
 
 def svcRBFGridsearch(X, y):
     global SUBMISSION_NAME
     SUBMISSION_NAME = "SVC_RBF"
-    param_grid = [{'C': np.logspace(1,4,10), 'kernel': ['rbf'], 'gamma': np.logspace(-10,-4,10)}]
-    grid_search = skgs.GridSearchCV(sksvm.SVC(probability=True, class_weight='balanced'), param_grid, cv=5, verbose=5)
+    param_grid = [{'C': np.logspace(0,4,100), 'kernel': ['rbf'], 'gamma': np.logspace(-12,-4,100)}]
+    grid_search = skgs.GridSearchCV(sksvm.SVC(probability=True, class_weight='balanced'), param_grid, cv=5, verbose=2)
     grid_search.fit(X,y)
     print 'Best Score of Grid Search: ' + str(grid_search.best_score_)
     print 'Best Params of Grid Search: ' + str(grid_search.best_params_)
-    return (grid_search.best_estimator_, str(grid_search.best_params_))
+    return (grid_search.best_estimator_, grid_search.best_params_, grid_search.best_score_)
 
 def main():
     # First extract feature matrix from train set and load targets
-    if(DEBUG):
-        pass
-
     X_train = extract_data("train")
     Y_train = read_targets()
-    print sum(Y_train)
 
     # Train models
-    estimator, params = svcRBFGridsearch(X_train, Y_train)
+    print "Starting to train..."
+    estimator, params, score = svcRBFGridsearch(X_train, Y_train)
     #estimator = svcPOLYGridSearch(X_train, Y_train)
     #estimator = svcSIGMOIDGridSearch(X_train, Y_train)
 
@@ -200,8 +192,21 @@ def main():
     X_test = extract_data("test")
 
     # Make predictions for the test set and write it to a file
+    print "Making predictions."
     Y_test = estimator.predict_proba(X_test)
-    generate_submission(Y_test, SUBMISSION_NAME, params)
+    generate_submission(Y_test, SUBMISSION_NAME, params, score)
+
+    print "\n\nDone. Have a good night."
+    print("""\
+                                       ._ o o
+                                       \_`-)|_
+                                    ,""       \\
+                                  ,"  ## |   o o.
+                                ," ##   ,-\__    `.
+                              ,"       /     `--._;)
+                            ,"     ## /
+                          ,"   ##    /
+                    """)
 
 if __name__ == "__main__":
     main()

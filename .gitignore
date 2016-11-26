@@ -101,3 +101,4 @@ ENV/
 .idea/*
 *.csv
 project1/v2/test.py
+*.spickle
