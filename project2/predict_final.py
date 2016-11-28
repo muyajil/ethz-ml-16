@@ -15,7 +15,7 @@ DEBUG = False
 debug_num = 10
 
 # params for aggregating
-cube_number = 5
+cube_number = 3
 histogram_bins = 50
 histogram_range = (1, 4001)
 
@@ -135,9 +135,12 @@ def read_targets():
 
 def generate_submission(Y_test, Name, params="", score="xxx"):
     par = [str(k) + "=" + str(v) for k,v in zip(params.keys(), params.values())]
-    #filename = os.getcwd() + "/Submissions/" + str(int(time())) + "_" + PREPROCESSING_NAME + "_" + Name + "_" + "score=" + str(score) + "_" + '_'.join(par) + ".csv"
-    filename = "final_sub.csv"
-    if os.path.isfile(filename):
+    if SUBMISSION_VERSION:
+        filename = "final_sub.csv"
+    else:
+        filename = os.getcwd() + "/Submissions/" + str(int(time())) + "_" + PREPROCESSING_NAME + "_" + Name + "_" + "score=" + str(score) + "_" + '_'.join(par) + ".csv"
+
+    if os.path.isfile(filename) and not SUBMISSION_VERSION:
         generate_submission(Y_test, Name + "1", params, score) # TODO change name to avoid colisions more elegant
         return
     with open(filename, "w") as file:
@@ -196,20 +199,25 @@ def main():
 
     # Train models
     print "Starting to train..."
-    #estimator, params, score = svcRBFGridsearch(X_train, Y_train)
-    estimator = sksvm.SVC(probability=True, class_weight='balanced', gamma=0.0000000001, C=10, kernel='rbf')
-    estimator.fit(X_train, Y_train)
-    #estimator, params, score = svcPOLYGridSearch(X_train, Y_train)
-    #estimator, params, score = svcSIGMOIDGridSearch(X_train, Y_train)
+    if SUBMISSION_VERSION:
+        estimator = sksvm.SVC(probability=True, class_weight='balanced', gamma=0.0000000001, C=100, kernel='rbf')
+        estimator.fit(X_train, Y_train)
+        params = {}
+        score = 0
+        SUBMISSION_NAME = "finale_submission"
+    else:
+        estimator, params, score = svcRBFGridsearch(X_train, Y_train)
+        #estimator, params, score = svcPOLYGridSearch(X_train, Y_train)
+        #estimator, params, score = svcSIGMOIDGridSearch(X_train, Y_train)
 
-    # distributed learning
-    '''
-    X_train = np.array(X_train)
-    split_X_train = [X_train[:, cube_number*i:(cube_number**2)*histogram_bins*(i+1)] for i in range(cube_number)]
+        # distributed learning
+        '''
+        X_train = np.array(X_train)
+        split_X_train = [X_train[:, cube_number*i:(cube_number**2)*histogram_bins*(i+1)] for i in range(cube_number)]
 
-    pool = multiprocessing.Pool(computational_cores)
-    learner_stuff = pool.map(partial_svc, zip(split_X_train, [Y_train for i in range(cube_number)]))
-    '''
+        pool = multiprocessing.Pool(computational_cores)
+        learner_stuff = pool.map(partial_svc, zip(split_X_train, [Y_train for i in range(cube_number)]))
+        '''
     del X_train, Y_train
 
     # Extract feature matrix from test set
