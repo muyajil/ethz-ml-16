@@ -10,12 +10,12 @@ import threading
 from time import time
 
 # Execution flags
-SUBMISSION_VERSION = False # True for final submission -> no output or customizability
+SUBMISSION_VERSION = True # True for final submission -> no output or customizability
 DEBUG = False
 debug_num = 10
 
 # params for aggregating
-cube_number = 5
+cube_number = 3
 histogram_bins = 50
 histogram_range = (1, 4001)
 
@@ -174,7 +174,7 @@ def svcPOLYGridSearch(X, y):
 def svcRBFGridsearch(X, y):
     global SUBMISSION_NAME
     SUBMISSION_NAME = "SVC_RBF"
-    param_grid = [{'C': np.logspace(0,4,10), 'kernel': ['rbf'], 'gamma': np.logspace(-12,-4,10)}]
+    param_grid = [{'C': np.logspace(0,4,2), 'kernel': ['rbf'], 'gamma': np.logspace(-12,-4,2)}]
     grid_search = skgs.GridSearchCV(sksvm.SVC(probability=True, class_weight='balanced'), param_grid, cv=5, verbose=5)
     grid_search.fit(X,y)
     print 'Best Score of Grid Search: ' + str(grid_search.best_score_)
@@ -195,17 +195,18 @@ def main():
 
     # Train models
     print "Starting to train..."
-    #estimator, params, score = svcRBFGridsearch(X_train, Y_train)
+    estimator, params, score = svcRBFGridsearch(X_train, Y_train)
     #estimator, params, score = svcPOLYGridSearch(X_train, Y_train)
     #estimator, params, score = svcSIGMOIDGridSearch(X_train, Y_train)
 
     # distributed learning
+    '''
     X_train = np.array(X_train)
     split_X_train = [X_train[:, cube_number*i:(cube_number**2)*histogram_bins*(i+1)] for i in range(cube_number)]
 
     pool = multiprocessing.Pool(computational_cores)
     learner_stuff = pool.map(partial_svc, zip(split_X_train, [Y_train for i in range(cube_number)]))
-
+    '''
     del X_train, Y_train
 
     # Extract feature matrix from test set
@@ -213,8 +214,9 @@ def main():
 
     # Make predictions for the test set and write it to a file
     print "Making predictions."
-    #Y_test = estimator.predict_proba(X_test)
+    Y_test = estimator.predict_proba(X_test)
 
+    '''
     X_test = np.array(X_test)
     Y_test = np.zeros((data_points_test, 2))
     split_X_test = [X_test[:, cube_number*i:(cube_number**2)*histogram_bins*(i+1)] for i in range(cube_number)]
@@ -226,6 +228,7 @@ def main():
     params = {}
     score = 0
     SUBMISSION_NAME = "parallel-svc"
+    '''
 
     generate_submission(Y_test, SUBMISSION_NAME, params, score)
 
