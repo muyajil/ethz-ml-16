@@ -174,7 +174,7 @@ def svcPOLYGridSearch(X, y):
 def svcRBFGridsearch(X, y):
     global SUBMISSION_NAME
     SUBMISSION_NAME = "SVC_RBF"
-    param_grid = [{'C': np.logspace(0,4,2), 'kernel': ['rbf'], 'gamma': np.logspace(-12,-4,2)}]
+    param_grid = [{'C': np.logspace(2,4,2), 'kernel': ['rbf'], 'gamma': np.logspace(-10,-4,2)}]
     grid_search = skgs.GridSearchCV(sksvm.SVC(probability=True, class_weight='balanced'), param_grid, cv=5, verbose=5)
     grid_search.fit(X,y)
     print 'Best Score of Grid Search: ' + str(grid_search.best_score_)

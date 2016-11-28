@@ -1,0 +1,37 @@
+# The authors' emails go into the first lines, one email per line.
+# Make sure you provide the .ethz.ch email.
+#
+# Now comes the key section with the three subsections "Preprocessing",
+# "Features" and "Model". Leave the headlines as they are and only
+# modify the keys. Try to provide at least three informative keys per
+# subsection and separate the keys with commas ",".
+#
+# Each key should be single word or concatenation of several words,
+# e.g. crop, histogram, mutualinformationscore, linearregression, etc.
+#
+# The final section is "Description" which includes a verbose summary
+# with no strict formatting but make sure it has a reasonable minimum
+# length.
+
+dmaag@student.ethz.ch
+ajilm@student.ethz.ch
+svincent@student.ethz.ch
+
+Preprocessing
+crop,none,none
+
+Features
+histogram,bucket,vector
+
+Model
+svc,gridsearch,key3
+
+Description
+
+We first cut off some of the outer space around the brain. Then we devided the
+brain into 3x3x3 blocks and generated a histogram with 50 bins over the range
+[1,4001]. We put each histogram of the blocks after another to receive a single
+vector per brain.
+After the feature selection we trained a RBF support vector classifier on all the
+training examples to gain the estimator. We did a gridsearch for the best
+parameters C and gamma. This yielded our results
