@@ -1,18 +1,3 @@
-# The authors' emails go into the first lines, one email per line.
-# Make sure you provide the .ethz.ch email.
-#
-# Now comes the key section with the three subsections "Preprocessing",
-# "Features" and "Model". Leave the headlines as they are and only
-# modify the keys. Try to provide at least three informative keys per
-# subsection and separate the keys with commas ",".
-#
-# Each key should be single word or concatenation of several words,
-# e.g. crop, histogram, mutualinformationscore, linearregression, etc.
-#
-# The final section is "Description" which includes a verbose summary
-# with no strict formatting but make sure it has a reasonable minimum
-# length.
-
 dmaag@student.ethz.ch
 ajilm@student.ethz.ch
 svincent@student.ethz.ch

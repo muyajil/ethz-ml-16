@@ -15,7 +15,7 @@ DEBUG = False
 debug_num = 10
 
 # params for aggregating
-cube_number = 7
+cube_number = 5
 histogram_bins = 50
 histogram_range = (1, 4001)
 
@@ -135,7 +135,8 @@ def read_targets():
 
 def generate_submission(Y_test, Name, params="", score="xxx"):
     par = [str(k) + "=" + str(v) for k,v in zip(params.keys(), params.values())]
-    filename = os.getcwd() + "/Submissions/" + str(int(time())) + "_" + PREPROCESSING_NAME + "_" + Name + "_" + "score=" + str(score) + "_" + '_'.join(par) + ".csv"
+    #filename = os.getcwd() + "/Submissions/" + str(int(time())) + "_" + PREPROCESSING_NAME + "_" + Name + "_" + "score=" + str(score) + "_" + '_'.join(par) + ".csv"
+    filename = "final_sub.csv"
     if os.path.isfile(filename):
         generate_submission(Y_test, Name + "1", params, score) # TODO change name to avoid colisions more elegant
         return
@@ -195,7 +196,9 @@ def main():
 
     # Train models
     print "Starting to train..."
-    estimator, params, score = svcRBFGridsearch(X_train, Y_train)
+    #estimator, params, score = svcRBFGridsearch(X_train, Y_train)
+    estimator = sksvm.SVC(probability=True, class_weight='balanced', gamma=0.0000000001, C=10, kernel='rbf')
+    estimator.fit(X_train, Y_train)
     #estimator, params, score = svcPOLYGridSearch(X_train, Y_train)
     #estimator, params, score = svcSIGMOIDGridSearch(X_train, Y_train)
 
