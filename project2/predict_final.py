@@ -15,7 +15,7 @@ DEBUG = False
 debug_num = 10
 
 # params for aggregating
-cube_number = 3
+cube_number = 7
 histogram_bins = 50
 histogram_range = (1, 4001)
 
@@ -174,7 +174,7 @@ def svcPOLYGridSearch(X, y):
 def svcRBFGridsearch(X, y):
     global SUBMISSION_NAME
     SUBMISSION_NAME = "SVC_RBF"
-    param_grid = [{'C': np.logspace(2,4,2), 'kernel': ['rbf'], 'gamma': np.logspace(-10,-4,2)}]
+    param_grid = [{'C': np.logspace(0,1,30), 'kernel': ['rbf'], 'gamma': np.logspace(-10,-8,30)}]
     grid_search = skgs.GridSearchCV(sksvm.SVC(probability=True, class_weight='balanced'), param_grid, cv=5, verbose=5)
     grid_search.fit(X,y)
     print 'Best Score of Grid Search: ' + str(grid_search.best_score_)
