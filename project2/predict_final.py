@@ -2,7 +2,7 @@ import os
 import sys
 import numpy as np
 import nibabel as nib
-#import sPickle # -> https://github.com/pgbovine/streaming-pickle
+import src.sPickle as sPickle # -> https://github.com/pgbovine/streaming-pickle
 import sklearn.grid_search as skgs
 import sklearn.svm as sksvm
 import multiprocessing
@@ -12,7 +12,7 @@ from time import time
 # Execution flags
 SUBMISSION_VERSION = True # True for final submission -> no output or customizability
 DEBUG = False
-debug_num = 5
+debug_num = 10
 
 # params for aggregating
 cube_number = 7
@@ -104,8 +104,8 @@ def extract_data(kind):
 
     if os.path.isfile(out_file) and not DEBUG:
         print "\'" + file_name + "\' found, loading data..."
-        #for elm in sPickle.s_load(open(out_file)):
-        #    feature_matrix.append(elm)
+        for elm in sPickle.s_load(open(out_file)):
+            feature_matrix.append(elm)
         print "done loading " + kind + " data"
     else:
         print "No file \'" + file_name + "\' found, starting to read data..."
@@ -118,8 +118,8 @@ def extract_data(kind):
         pool.join()
 
         # write data to file
-        #out_file = open(out_file, 'w')
-        #sPickle.s_dump(feature_matrix, out_file)
+        out_file = open(out_file, 'w')
+        sPickle.s_dump(feature_matrix, out_file)
 
     return feature_matrix
 
@@ -140,7 +140,7 @@ def generate_submission(Y_test, Name, params="", score="xxx"):
         generate_submission(Y_test, Name + "1", params, score) # TODO change name to avoid colisions more elegant
         return
     with open(filename, "w") as file:
-        file.write("Id,Prediction\n")
+        file.write("ID,Prediction\n")
         for i in range(len(Y_test)):
             file.write(str(i+1) + "," + str(Y_test[i][1]) + "\n")
         file.close()
@@ -174,7 +174,7 @@ def svcPOLYGridSearch(X, y):
 def svcRBFGridsearch(X, y):
     global SUBMISSION_NAME
     SUBMISSION_NAME = "SVC_RBF"
-    param_grid = [{'C': np.logspace(0,1,30), 'kernel': ['rbf'], 'gamma': np.logspace(-10,-8,30)}]
+    param_grid = [{'C': np.logspace(0,1,2), 'kernel': ['rbf'], 'gamma': np.logspace(-10,-8,2)}]
     grid_search = skgs.GridSearchCV(sksvm.SVC(probability=True, class_weight='balanced'), param_grid, cv=5, verbose=5)
     grid_search.fit(X,y)
     print 'Best Score of Grid Search: ' + str(grid_search.best_score_)
