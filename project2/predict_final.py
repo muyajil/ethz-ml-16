@@ -125,7 +125,7 @@ def extract_data(kind):
 
 def read_targets():
     targets = []
-    with open("targets.csv", 'r') as file:
+    with open("data/targets.csv", 'r') as file:
         targets = file.read().split()
     targets = map(int, targets)
 
