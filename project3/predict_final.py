@@ -181,8 +181,8 @@ def svcSIGMOIDGridSearch(X, y):
     param_grid = [{'C': np.logspace(-3,20,2), 'gamma': np.logspace(-5,3,20), 'kernel': ['sigmoid']}]
     grid_search = skgs.GridSearchCV(sksvm.SVC(probability=True), param_grid, cv=5, verbose=5)
     grid_search.fit(X,y)
-    print 'Best Score of Grid Search: ' + str(grid_search.best_score_)
-    print 'Best Params of Grid Search: ' + str(grid_search.best_params_)
+    print bcolors.UNDERLINE + bcolors.OKBLUE + 'Best Score of Grid Search: ' + str(grid_search.best_score_) + bcolors.ENDC
+    print bcolors.UNDERLINE + bcolors.OKBLUE + 'Best Params of Grid Search: ' + str(grid_search.best_params_) + bcolors.ENDC
     return (grid_search.best_estimator_, grid_search.best_params_)
 
 def svcPOLYGridSearch(X, y):
@@ -191,8 +191,8 @@ def svcPOLYGridSearch(X, y):
     param_grid = [{'degree': np.linspace(1,5,5),'C': np.logspace(-3.20,10), 'gamma': np.logspace(-5,3,20), 'kernel': ['poly']}]
     grid_search = skgs.GridSearchCV(sksvm.SVC(probability=True), param_grid, cv=5, verbose=5)
     grid_search.fit(X,y)
-    print 'Best Score of Grid Search: ' + str(grid_search.best_score_)
-    print 'Best Params of Grid Search: ' + str(grid_search.best_params_)
+    print bcolors.UNDERLINE + bcolors.OKBLUE + 'Best Score of Grid Search: ' + str(grid_search.best_score_) + bcolors.ENDC
+    print bcolors.UNDERLINE + bcolors.OKBLUE + 'Best Params of Grid Search: ' + str(grid_search.best_params_) + bcolors.ENDC
     return (grid_search.best_estimator_, grid_search.best_params_)
 
 def svcRBFGridsearch(X, y):
@@ -201,8 +201,8 @@ def svcRBFGridsearch(X, y):
     param_grid = [{'C': np.logspace(0,1,2), 'kernel': ['rbf'], 'gamma': np.logspace(-10,-8,2)}]
     grid_search = skgs.GridSearchCV(sksvm.SVC(probability=True, class_weight='balanced'), param_grid, cv=5, verbose=5)
     grid_search.fit(X,y)
-    print 'Best Score of Grid Search: ' + str(grid_search.best_score_)
-    print 'Best Params of Grid Search: ' + str(grid_search.best_params_)
+    print bcolors.UNDERLINE + bcolors.OKBLUE + 'Best Score of Grid Search: ' + str(grid_search.best_score_) + bcolors.ENDC
+    print bcolors.UNDERLINE + bcolors.OKBLUE + 'Best Params of Grid Search: ' + str(grid_search.best_params_) + bcolors.ENDC
     return (grid_search.best_estimator_, grid_search.best_params_, grid_search.best_score_)
 
 def partial_svc(a):
