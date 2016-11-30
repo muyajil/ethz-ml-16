@@ -118,8 +118,6 @@ def extract_data(kind):
         print bcolors.OKBLUE + "\'" + file_name + "\' found, loading data..." + bcolors.ENDC
         for elm in sPickle.s_load(open(out_file)):
             feature_matrix.append(elm)
-        #print "done loading " + kind + " data."
-        print bcolors.OKGREEN + "done loading " + kind + " data." + bcolors.ENDC
     else:
         print bcolors.WARNING + "No file \'" + file_name + "\' found, starting to read data..." + bcolors.ENDC
 
@@ -133,6 +131,7 @@ def extract_data(kind):
         # write data to file
         sPickle.s_dump(feature_matrix, open(out_file, 'w'))
 
+    print bcolors.OKGREEN + "Loading " + kind + " data finished." + bcolors.ENDC
     return feature_matrix
 
 def read_targets():
