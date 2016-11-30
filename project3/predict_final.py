@@ -10,23 +10,25 @@ import threading
 from time import time
 
 # Execution flags
-SUBMISSION_VERSION = False # True for final submission -> no output or customizability
+SUBMISSION_VERSION = False # True for final submission -> single prediction file and overrites old!
+computational_cores = 8 # number of workers to process paralizable workload
+
+# Debug Flags
 DEBUG = False
 debug_num = 10
 
-# params for aggregating
-cube_number = 7
-histogram_bins = 50
-histogram_range = (1, 4001)
+# Feature selection
+cube_number = 7 # 3D cubes are cut into cube_number**3 smaller cubes before further processing
+histogram_bins = 50 # number of bins to aggregate histogram
+histogram_range = (1, 4001) # range from minimal to maximal significant data value
 
 # constants
-data_points_train = 278
-data_points_test = 138
-feature_vectors_folder = "Out"
-submission_folder = "Submission"
-computational_cores = 8
+data_points_train = 278 # number of datapoints in train set
+data_points_test = 138 # number of datapoints in test set
+feature_vectors_folder = "Out" # folder name for intermediate results
+submission_folder = "Submission" # folder name for submission files
 
-# constants for cutting cube into right shape
+# constants for cutting unsignificant boundary off of cube
 x_start = 20
 x_end = 156
 y_start = 20
@@ -37,6 +39,16 @@ z_end = 156
 # Output file names
 PREPROCESSING_NAME = "cube-histo-" + str(cube_number) + "-" + str(histogram_bins)
 SUBMISSION_NAME = "not_defined"
+
+class bcolors:
+    HEADER = '\033[95m'
+    OKBLUE = '\033[94m'
+    OKGREEN = '\033[92m'
+    WARNING = '\033[93m'
+    FAIL = '\033[91m'
+    ENDC = '\033[0m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
 
 def load_img(kind, number):
     img = nib.load("set_" + kind + "/" + kind + "_" + str(number) + ".nii")
@@ -90,26 +102,26 @@ def process_img_test(index):
     return X_test
 
 def extract_data(kind):
-    global computational_cores
-    image_num = globals()["data_points_" + kind]
-
-    file_name = kind + "_" + PREPROCESSING_NAME + ".spickle"
-
+    # calculate or load feature matrix for the test or train set
     if DEBUG:
         file_name = "debug_" + kind + "_" + PREPROCESSING_NAME + ".spickle"
         image_num = debug_num
-        computational_cores = min(debug_num, computational_cores)
+    else:
+        file_name = kind + "_" + PREPROCESSING_NAME + ".spickle"
+        image_num = globals()["data_points_" + kind]
 
     feature_matrix = []
     out_file = os.getcwd() + "/" + feature_vectors_folder + "/" + file_name
 
+    # only calculate in debug mode or if not allready done earlier
     if os.path.isfile(out_file) and not DEBUG:
-        print "\'" + file_name + "\' found, loading data..."
+        print bcolors.OKBLUE + "\'" + file_name + "\' found, loading data..." + bcolors.ENDC
         for elm in sPickle.s_load(open(out_file)):
             feature_matrix.append(elm)
-        print "done loading " + kind + " data"
+        #print "done loading " + kind + " data."
+        print bcolors.OKGREEN + "done loading " + kind + " data." + bcolors.ENDC
     else:
-        print "No file \'" + file_name + "\' found, starting to read data..."
+        print bcolors.WARNING + "No file \'" + file_name + "\' found, starting to read data..." + bcolors.ENDC
 
         # parallel reading data
         pic_num = range(1, image_num + 1)
@@ -119,15 +131,16 @@ def extract_data(kind):
         pool.join()
 
         # write data to file
-        out_file = open(out_file, 'w')
-        sPickle.s_dump(feature_matrix, out_file)
+        sPickle.s_dump(feature_matrix, open(out_file, 'w'))
 
     return feature_matrix
 
 def read_targets():
+    # returns the list of targets, each target is a list with 3 entries, eg., [[0,1,1],[1,0,1],...]
+    # targets represent [1,1,1] for female, yung, healthy, [0,0,0] for male, old, sick
     targets = []
     with open("data/targets.csv", 'r') as file:
-        targets = map(int, file.read().split())
+        targets = [map(int, x.split(',')) for x in file.read().split()]
 
     if DEBUG:
         return targets[:debug_num]
@@ -135,13 +148,14 @@ def read_targets():
 
 def generate_submission(Y_test, Name, info=""):
     # Y_test should hold "ID,Sample,Label,Predicted" in one line for every datapoint
+    #
     boolean = {0: "False", 1: "True"}
     if SUBMISSION_VERSION:
         filename = "final_sub.csv"
     else:
         filename = os.getcwd() + "/" + submission_folder + "/" + str(int(time())) + "_" + PREPROCESSING_NAME + "_" + Name + "_" + info + ".csv"
 
-    if os.path.isfile(filename) and not SUBMISSION_VERSION:
+    if os.path.isfile(filename) and not SUBMISSION_VERSION: # only overrite a previous final_submission, not a normal one
         generate_submission(Y_test, Name + "1", info) # TODO change name to avoid colisions more elegant
         return
     with open(filename, "w") as file:
@@ -151,10 +165,10 @@ def generate_submission(Y_test, Name, info=""):
             file.write(str(3*i + 1) + "," + str(i) + ",age," + boolean[Y_test[i][2]] + "\n") #TODO check wheter correct index and correct logic
             file.write(str(3*i + 2) + "," + str(i) + ",health," + boolean[Y_test[i][3]] + "\n") #TODO check wheter correct index and correct logic
         file.close()
-    print "Wrote submission file '" + filename + "'."
+    print bcolors.OKBLUE + "Wrote submission file '" + filename[len(os.getcwd()) + 1:] + "'." + bcolors.ENDC
 
-def generate_name():
-    par = [str(k) + "=" + str(v) for k,v in zip(params.keys(), params.values())]
+#def generate_name():
+#    par = [str(k) + "=" + str(v) for k,v in zip(params.keys(), params.values())]
 
 def make_folder(foldername):
     folder = os.getcwd() + "/" + foldername + "/"
@@ -195,7 +209,7 @@ def partial_svc(a):
     return svcRBFGridsearch(a[0], a[1])
 
 def print_done():
-    print "\n\nDone. Have a good night."
+    print bcolors.OKGREEN + bcolors.BOLD + "\n\nDone. Have a good night." + bcolors.OKGREEN
     print("""\
                                        ._ o o
                                        \_`-)|_
@@ -214,11 +228,12 @@ def main():
     make_folder(feature_vectors_folder)
 
     # First extract feature matrix from train set and load targets
+    print bcolors.HEADER + "Reading traing data.." + bcolors.ENDC
     X_train = extract_data("train")
     Y_train = read_targets()
 
     # Train models
-    print "Starting to train..."
+    print bcolors.HEADER + "Starting to train..." bcolors.HEADER
     if SUBMISSION_VERSION: # exact parameters for final submission
         estimator = sksvm.SVC(probability=True, class_weight='balanced', gamma=0.0000000001, C=100, kernel='rbf')
         estimator.fit(X_train, Y_train)
@@ -247,7 +262,7 @@ def main():
     X_test = extract_data("test")
 
     # Make predictions for the test set and write it to a file
-    print "Making predictions."
+    print bcolors.HEADER + "Making predictions.." bcolors.ENDC
     Y_test = estimator.predict_proba(X_test)
 
     '''
