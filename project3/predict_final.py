@@ -233,14 +233,15 @@ def main():
     Y_train = read_targets()
 
     # Train models
-    print bcolors.HEADER + "Starting to train..." bcolors.HEADER
+    print bcolors.HEADER + "Starting to train..." + bcolors.HEADER
     if SUBMISSION_VERSION: # exact parameters for final submission
+        # TODO: old version, need to train 3 classifications!
         estimator = sksvm.SVC(probability=True, class_weight='balanced', gamma=0.0000000001, C=100, kernel='rbf')
         estimator.fit(X_train, Y_train)
-        params = {}
-        score = 0
+        info = ""
         SUBMISSION_NAME = "finale_submission"
     else:
+        # TODO: old version, need to train for 3 classifications!!
         estimator, params, score = svcRBFGridsearch(X_train, Y_train)
         #estimator, params, score = svcPOLYGridSearch(X_train, Y_train)
         #estimator, params, score = svcSIGMOIDGridSearch(X_train, Y_train)
@@ -259,10 +260,11 @@ def main():
     del X_train, Y_train
 
     # Extract feature matrix from test set
+    print bcolors.HEADER + "Reading test data.." + bcolors.ENDC
     X_test = extract_data("test")
 
     # Make predictions for the test set and write it to a file
-    print bcolors.HEADER + "Making predictions.." bcolors.ENDC
+    print bcolors.HEADER + "Making predictions.." + bcolors.ENDC
     Y_test = estimator.predict_proba(X_test)
 
     '''
