@@ -25,8 +25,8 @@ histogram_range = (1, 4001) # range from minimal to maximal significant data val
 # constants
 data_points_train = 278 # number of datapoints in train set
 data_points_test = 138 # number of datapoints in test set
-feature_vectors_folder = "Out" # folder name for intermediate results
-submission_folder = "Submission" # folder name for submission files
+feature_vectors_folder = "Cache" # folder name for intermediate results
+submission_folder = "Submissions" # folder name for submission files
 
 # constants for cutting unsignificant boundary off of cube
 x_start = 20
@@ -160,14 +160,18 @@ def generate_submission(Y_test, Name, info=""):
     with open(filename, "w") as file:
         file.write("ID,Sample,Label,Predicted\n")
         for i in range(len(Y_test)):
-            file.write(str(3*i) + "," + str(i) + ",gender," + boolean[Y_test[i][1]] + "\n") #TODO check wheter correct index and correct logic
-            file.write(str(3*i + 1) + "," + str(i) + ",age," + boolean[Y_test[i][2]] + "\n") #TODO check wheter correct index and correct logic
-            file.write(str(3*i + 2) + "," + str(i) + ",health," + boolean[Y_test[i][3]] + "\n") #TODO check wheter correct index and correct logic
+            file.write(str(3*i) + "," + str(i) + ",gender," + boolean[round(Y_test[i][0])] + "\n") #TODO check wheter correct index and correct logic
+            file.write(str(3*i + 1) + "," + str(i) + ",age," + boolean[round(Y_test[i][1])] + "\n") #TODO check wheter correct index and correct logic
+            file.write(str(3*i + 2) + "," + str(i) + ",health," + boolean[round(Y_test[i][2])] + "\n") #TODO check wheter correct index and correct logic
         file.close()
     print bcolors.OKBLUE + "Wrote submission file '" + filename[len(os.getcwd()) + 1:] + "'." + bcolors.ENDC
 
-#def generate_name():
-#    par = [str(k) + "=" + str(v) for k,v in zip(params.keys(), params.values())]
+def generate_name(params_list, score_list):
+    # expects a list of the used parameters and scores in the order [gender, age, health]
+    # TODO generate and return string for submission file
+    #par = [str(k) + "=" + str(v) for k,v in zip(params.keys(), params.values())]
+
+    return "_Todo:generate_name_"
 
 def make_folder(foldername):
     folder = os.getcwd() + "/" + foldername + "/"
@@ -194,11 +198,10 @@ def svcPOLYGridSearch(X, y):
     print bcolors.UNDERLINE + bcolors.OKBLUE + 'Best Params of Grid Search: ' + str(grid_search.best_params_) + bcolors.ENDC
     return (grid_search.best_estimator_, grid_search.best_params_)
 
-def svcRBFGridsearch(X, y):
+def svcRBFGridsearch(X, y, param_grid, prob=True, cl_weight='balanced'):
     global SUBMISSION_NAME
     SUBMISSION_NAME = "SVC_RBF"
-    param_grid = [{'C': np.logspace(0,1,2), 'kernel': ['rbf'], 'gamma': np.logspace(-10,-8,2)}]
-    grid_search = skgs.GridSearchCV(sksvm.SVC(probability=True, class_weight='balanced'), param_grid, cv=5, verbose=5)
+    grid_search = skgs.GridSearchCV(sksvm.SVC(probability=prob, class_weight=cl_weight), param_grid, cv=5, verbose=5)
     grid_search.fit(X,y)
     print bcolors.UNDERLINE + bcolors.OKBLUE + 'Best Score of Grid Search: ' + str(grid_search.best_score_) + bcolors.ENDC
     print bcolors.UNDERLINE + bcolors.OKBLUE + 'Best Params of Grid Search: ' + str(grid_search.best_params_) + bcolors.ENDC
@@ -221,6 +224,7 @@ def print_done():
                     """)
 
 def main():
+    global SUBMISSION_NAME
     # make sure folders exist so that output can be written
     if not SUBMISSION_VERSION:
         make_folder(submission_folder)
@@ -231,8 +235,12 @@ def main():
     X_train = extract_data("train")
     Y_train = read_targets()
 
+    Y_gender = [y[0] for y in Y_train]
+    Y_age = [y[1] for y in Y_train]
+    Y_sick = [y[2] for y in Y_train]
+
     # Train models
-    print bcolors.HEADER + "Starting to train..." + bcolors.HEADER
+    print bcolors.HEADER + "Starting to train..." + bcolors.ENDC
     if SUBMISSION_VERSION: # exact parameters for final submission
         # TODO: old version, need to train 3 classifications!
         estimator = sksvm.SVC(probability=True, class_weight='balanced', gamma=0.0000000001, C=100, kernel='rbf')
@@ -241,7 +249,15 @@ def main():
         SUBMISSION_NAME = "finale_submission"
     else:
         # TODO: old version, need to train for 3 classifications!!
-        estimator, params, score = svcRBFGridsearch(X_train, Y_train)
+        param_grid = [{'C': np.logspace(0,10,10), 'kernel': ['rbf'], 'gamma': np.logspace(-10,-6,10)}]
+        estimator_gender, params_gender, score_gender = svcRBFGridsearch(X_train, Y_gender, param_grid)
+        param_grid = [{'C': np.logspace(0,10,10), 'kernel': ['rbf'], 'gamma': np.logspace(-10,-6,10)}]
+        estimator_age, params_age, score_age = svcRBFGridsearch(X_train, Y_age, param_grid)
+        param_grid = [{'C': np.logspace(0,10,10), 'kernel': ['rbf'], 'gamma': np.logspace(-10,-6,10)}]
+        estimator_sick, params_sick, score_sick = svcRBFGridsearch(X_train, Y_sick, param_grid)
+
+        info = generate_name([params_gender, params_age, params_sick], [score_gender, score_age, score_sick])
+
         #estimator, params, score = svcPOLYGridSearch(X_train, Y_train)
         #estimator, params, score = svcSIGMOIDGridSearch(X_train, Y_train)
 
@@ -264,7 +280,14 @@ def main():
 
     # Make predictions for the test set and write it to a file
     print bcolors.HEADER + "Making predictions.." + bcolors.ENDC
-    Y_test = estimator.predict_proba(X_test)
+    #Y_test = estimator.predict_proba(X_test)
+    Y_test_gender = estimator_gender.predict_proba(X_test)
+    Y_test_age = estimator_age.predict_proba(X_test)
+    Y_test_sick = estimator_sick.predict_proba(X_test)
+    Y_test_gender = np.array(Y_test_gender)[:, 1]
+    Y_test_age = np.array(Y_test_age)[:, 1]
+    Y_test_sick = np.array(Y_test_sick)[:, 1]
+    Y_test = zip(Y_test_gender, Y_test_gender, Y_test_sick)
 
     '''
     # averages the weight vectors to one more reliable weight vector
@@ -282,7 +305,6 @@ def main():
     SUBMISSION_NAME = "parallel-svc"
     '''
 
-    info = "" #TODO print score and parameters info into info
     generate_submission(Y_test, SUBMISSION_NAME, info)
 
     print_done()
