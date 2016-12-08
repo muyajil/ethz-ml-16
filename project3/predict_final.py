@@ -171,7 +171,7 @@ def generate_name(params_list, score_list):
     # TODO generate and return string for submission file
     #par = [str(k) + "=" + str(v) for k,v in zip(params.keys(), params.values())]
 
-    return "_Todo:generate_name_"
+    return "_Todo_generate_name_"
 
 def make_folder(foldername):
     folder = os.getcwd() + "/" + foldername + "/"
