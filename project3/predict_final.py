@@ -11,7 +11,7 @@ from time import time
 
 # Execution flags
 SUBMISSION_VERSION = False # True for final submission -> single prediction file and overrites old!
-computational_cores = 8 # number of workers to process paralizable workload
+computational_cores = 7 # number of workers to process paralizable workload
 
 # Debug Flags
 DEBUG = False
@@ -211,7 +211,7 @@ def partial_svc(a):
     return svcRBFGridsearch(a[0], a[1])
 
 def print_done():
-    print bcolors.OKGREEN + bcolors.BOLD + "\n\nDone. Have a good night." + bcolors.OKGREEN
+    print bcolors.OKGREEN + bcolors.BOLD + "\n\nDone. Have a good night." + bcolors.ENDC
     print("""\
                                        ._ o o
                                        \_`-)|_
@@ -304,6 +304,7 @@ def main():
     score = 0
     SUBMISSION_NAME = "parallel-svc"
     '''
+
 
     generate_submission(Y_test, SUBMISSION_NAME, info)
 
