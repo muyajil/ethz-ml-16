@@ -86,12 +86,10 @@ def process_img(kind, index):
 
 def process_img_train(index):
     X_train = process_img("train", index)
-    #print "Finished reading file train_" + str(index) + "; " + "%.2f" % ((progress_tracker/float(data_points_train)) * 100) + "%"
     return X_train
 
 def process_img_test(index):
     X_test = process_img("test", index)
-    #print "Finished reading file test_" + str(index) + "; " + "%.2f" % ((progress_tracker/float(data_points_test)) * 100) + "%"
     return X_test
 
 def extract_data(kind):
@@ -161,10 +159,10 @@ def generate_submission(Y_test, Name, info=""):
 
 def generate_name(params_list, score_list):
     # expects a list of the used parameters and scores in the order [gender, age, health]
-    # TODO generate and return string for submission file
-    #par = [str(k) + "=" + str(v) for k,v in zip(params.keys(), params.values())]
-
-    return "_Todo_generate_name_"
+    # TODO: change to work with other formats/ more classifiers
+    temp = zip(params_list[0].keys(), params_list[0].values(), params_list[1].values(), params_list[2].values())
+    par = [str(k) + "=" + str(v0) + "_" + str(v1) + "_" + str(v2) for k,v0,v1,v2 in temp]
+    return par
 
 def make_folder(foldername):
     folder = os.getcwd() + "/" + foldername + "/"
@@ -241,7 +239,6 @@ def main():
         info = ""
         SUBMISSION_NAME = "finale_submission"
     else:
-        # TODO: old version, need to train for 3 classifications!!
         param_grid = [{'C': np.logspace(0,10,10), 'kernel': ['rbf'], 'gamma': np.logspace(-10,-6,10)}]
         estimator_gender, params_gender, score_gender = svcRBFGridsearch(X_train, Y_gender, param_grid)
         param_grid = [{'C': np.logspace(0,10,10), 'kernel': ['rbf'], 'gamma': np.logspace(-10,-6,10)}]
@@ -250,9 +247,6 @@ def main():
         estimator_sick, params_sick, score_sick = svcRBFGridsearch(X_train, Y_sick, param_grid)
 
         info = generate_name([params_gender, params_age, params_sick], [score_gender, score_age, score_sick])
-
-        #estimator, params, score = svcPOLYGridSearch(X_train, Y_train)
-        #estimator, params, score = svcSIGMOIDGridSearch(X_train, Y_train)
 
         # distributed learning
         '''
@@ -273,7 +267,6 @@ def main():
 
     # Make predictions for the test set and write it to a file
     print bcolors.HEADER + "Making predictions.." + bcolors.ENDC
-    #Y_test = estimator.predict_proba(X_test)
     Y_test_gender = estimator_gender.predict_proba(X_test)
     Y_test_age = estimator_age.predict_proba(X_test)
     Y_test_sick = estimator_sick.predict_proba(X_test)
@@ -297,7 +290,6 @@ def main():
     score = 0
     SUBMISSION_NAME = "parallel-svc"
     '''
-
 
     generate_submission(Y_test, SUBMISSION_NAME, info)
 
