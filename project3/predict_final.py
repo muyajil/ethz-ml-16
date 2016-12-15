@@ -195,9 +195,12 @@ def main():
     X_train = extract_data("train")
     Y_train = read_targets()
 
+    '''
     Y_gender = [y[0] for y in Y_train]
     Y_age = [y[1] for y in Y_train]
     Y_sick = [y[2] for y in Y_train]
+    '''
+
     clf = tree.DecisionTreeClassifier()
     # Train models
     print bcolors.HEADER + "Starting to train..." + bcolors.ENDC
@@ -207,7 +210,7 @@ def main():
         estimator.fit(X_train, Y_train)
         info = ""
         SUBMISSION_NAME = "finale_submission"
-    else:       
+    else:
         clf = clf.fit(X_train, Y_train)
 
     del X_train, Y_train
