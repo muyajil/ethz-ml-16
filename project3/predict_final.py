@@ -18,7 +18,7 @@ DEBUG = False
 debug_num = 10
 
 # Feature selection
-cube_number = 7 # 3D cubes are cut into cube_number**3 smaller cubes before further processing
+cube_number = 6 # 3D cubes are cut into cube_number**3 smaller cubes before further processing
 histogram_bins = 50 # number of bins to aggregate histogram
 histogram_range = (1, 4001) # range from minimal to maximal significant data value
 
@@ -61,7 +61,7 @@ def process_img(kind, index):
     X = []
     X_3d = np.array(load_img(kind, index))
 
-    # XXX process img and store in 'X'
+    # process img and store in 'X'
     X_3d = X_3d[x_start:x_end, y_start:y_end, z_start:z_end]
 
     XX, YY, ZZ = X_3d.shape
@@ -138,7 +138,6 @@ def read_targets():
 
 def generate_submission(Y_test, Name, info=""):
     # Y_test should hold "ID,Sample,Label,Predicted" in one line for every datapoint
-    #
     boolean = {0: "False", 1: "True"}
     if SUBMISSION_VERSION:
         filename = "final_sub.csv"
@@ -151,11 +150,12 @@ def generate_submission(Y_test, Name, info=""):
     with open(filename, "w") as file:
         file.write("ID,Sample,Label,Predicted\n")
         for i in range(len(Y_test)):
-            file.write(str(3*i) + "," + str(i) + ",gender," + boolean[round(Y_test[i][0])] + "\n") #TODO check wheter correct index and correct logic
-            file.write(str(3*i + 1) + "," + str(i) + ",age," + boolean[round(Y_test[i][1])] + "\n") #TODO check wheter correct index and correct logic
-            file.write(str(3*i + 2) + "," + str(i) + ",health," + boolean[round(Y_test[i][2])] + "\n") #TODO check wheter correct index and correct logic
+            #TODO check wheter correct index and correct logic
+            file.write(str(3*i) + "," + str(i) + ",gender," + boolean[round(Y_test[i][0])] + "\n")
+            file.write(str(3*i + 1) + "," + str(i) + ",age," + boolean[round(Y_test[i][1])] + "\n")
+            file.write(str(3*i + 2) + "," + str(i) + ",health," + boolean[round(Y_test[i][2])] + "\n")
         file.close()
-    print bcolors.OKBLUE + "Wrote submission file '" + filename[len(os.getcwd()) + 1:] + "'." + bcolors.ENDC
+    print bcolors.OKBLUE + "Wrote submission file '" + filename[(len(os.getcwd()) + 1):] + "'." + bcolors.ENDC
 
 def generate_name(params_list, score_list):
     # expects a list of the used parameters and scores in the order [gender, age, health]
