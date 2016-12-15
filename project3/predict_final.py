@@ -55,14 +55,7 @@ def load_img(kind, number):
     img = nib.load("set_" + kind + "/" + kind + "_" + str(number) + ".nii")
     (height, width, depth, values) = img.shape
     data = img.get_data()
-    X_3d = []
-    for a in range(height):
-        X_2d = []
-        for b in range(width):
-            X_1d = [num for sub in data[a][b] for num in sub]
-            X_2d.append(X_1d)
-        X_3d.append(X_2d)
-    del data
+    X_3d = data[:, :, :, 0]
     return X_3d
 
 def process_img(kind, index):
