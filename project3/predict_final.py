@@ -170,39 +170,6 @@ def make_folder(foldername):
     if not os.path.exists(folder):
         os.makedirs(folder)
 
-def svcSIGMOIDGridSearch(X, y):
-    global SUBMISSION_NAME
-    SUBMISSION_NAME = "SVC_SIG"
-    param_grid = [{'C': np.logspace(-3,20,2), 'gamma': np.logspace(-5,3,20), 'kernel': ['sigmoid']}]
-    grid_search = skgs.GridSearchCV(sksvm.SVC(probability=True), param_grid, cv=5, verbose=5)
-    grid_search.fit(X,y)
-    print bcolors.UNDERLINE + bcolors.OKBLUE + 'Best Score of Grid Search: ' + str(grid_search.best_score_) + bcolors.ENDC
-    print bcolors.UNDERLINE + bcolors.OKBLUE + 'Best Params of Grid Search: ' + str(grid_search.best_params_) + bcolors.ENDC
-    return (grid_search.best_estimator_, grid_search.best_params_)
-
-def svcPOLYGridSearch(X, y):
-    global SUBMISSION_NAME
-    SUBMISSION_NAME = "SVC_POLY"
-    param_grid = [{'degree': np.linspace(1,5,5),'C': np.logspace(-3.20,10), 'gamma': np.logspace(-5,3,20), 'kernel': ['poly']}]
-    grid_search = skgs.GridSearchCV(sksvm.SVC(probability=True), param_grid, cv=5, verbose=5)
-    grid_search.fit(X,y)
-    print bcolors.UNDERLINE + bcolors.OKBLUE + 'Best Score of Grid Search: ' + str(grid_search.best_score_) + bcolors.ENDC
-    print bcolors.UNDERLINE + bcolors.OKBLUE + 'Best Params of Grid Search: ' + str(grid_search.best_params_) + bcolors.ENDC
-    return (grid_search.best_estimator_, grid_search.best_params_)
-
-def svcRBFGridsearch(X, y, param_grid, prob=True, cl_weight='balanced'):
-    global SUBMISSION_NAME
-    SUBMISSION_NAME = "SVC_RBF"
-    grid_search = skgs.GridSearchCV(sksvm.SVC(probability=prob, class_weight=cl_weight), param_grid, cv=5, verbose=5)
-    grid_search.fit(X,y)
-    print bcolors.UNDERLINE + bcolors.OKBLUE + 'Best Score of Grid Search: ' + str(grid_search.best_score_) + bcolors.ENDC
-    print bcolors.UNDERLINE + bcolors.OKBLUE + 'Best Params of Grid Search: ' + str(grid_search.best_params_) + bcolors.ENDC
-    return (grid_search.best_estimator_, grid_search.best_params_, grid_search.best_score_)
-
-
-def partial_svc(a):
-    return svcRBFGridsearch(a[0], a[1])
-
 def print_done():
     print bcolors.OKGREEN + bcolors.BOLD + "\n\nDone. Have a good night." + bcolors.ENDC
     print("""\
@@ -240,29 +207,9 @@ def main():
         estimator.fit(X_train, Y_train)
         info = ""
         SUBMISSION_NAME = "finale_submission"
-    else:
-        
+    else:       
         clf = clf.fit(X_train, Y_train)
-        #param_grid = [{'C': np.logspace(0,10,10), 'kernel': ['rbf'], 'gamma': np.logspace(-10,-6,10)}]
-        #estimator_gender, params_gender, score_gender = svcRBFGridsearch(X_train, Y_gender, param_grid)
-        #param_grid = [{'C': np.logspace(0,10,10), 'kernel': ['rbf'], 'gamma': np.logspace(-10,-6,10)}]
-        #estimator_age, params_age, score_age = svcRBFGridsearch(X_train, Y_age, param_grid)
-        #param_grid = [{'C': np.logspace(0,10,10), 'kernel': ['rbf'], 'gamma': np.logspace(-10,-6,10)}]
-        #estimator_sick, params_sick, score_sick = svcRBFGridsearch(X_train, Y_sick, param_grid)
 
-        #info = generate_name([params_gender, params_age, params_sick], [score_gender, score_age, score_sick])
-
-        # distributed learning
-        '''
-        X_train = np.array(X_train)
-        # splits the n**3 cube vectors into n vectors (representing n**2 cubes)
-        split_X_train = [X_train[:, cube_number*i:(cube_number**2)*histogram_bins*(i+1)] for i in range(cube_number)]
-
-        pool = multiprocessing.Pool(computational_cores)
-        # each svc receives a strip of the X matrix (feature x0-xj for every brain) and the full Y_train
-        # return value is a list of tuples with estimator, params, score
-        learner_stuff = pool.map(partial_svc, zip(split_X_train, [Y_train for i in range(cube_number)]))
-        '''
     del X_train, Y_train
 
     # Extract feature matrix from test set
@@ -271,31 +218,10 @@ def main():
 
     # Make predictions for the test set and write it to a file
     print bcolors.HEADER + "Making predictions.." + bcolors.ENDC
-    #Y_test_gender = estimator_gender.predict_proba(X_test)
-    #Y_test_age = estimator_age.predict_proba(X_test)
-    #Y_test_sick = estimator_sick.predict_proba(X_test)
-    #Y_test_gender = np.array(Y_test_gender)[:, 1]
-    #Y_test_age = np.array(Y_test_age)[:, 1]
-    #Y_test_sick = np.array(Y_test_sick)[:, 1]
-    #Y_test = zip(Y_test_gender, Y_test_gender, Y_test_sick)
+
     Y_test = clf.predict(X_test)
     SUBMISSION_NAME = "decision_trees"
     info = "geil"
-    '''
-    # averages the weight vectors to one more reliable weight vector
-    X_test = np.array(X_test)
-    Y_test = np.zeros((data_points_test, 2))
-    # again split the featur matrix into strips with a partial feature set for every picture
-    split_X_test = [X_test[:, cube_number*i:(cube_number**2)*histogram_bins*(i+1)] for i in range(cube_number)]
-    for i in range(cube_number):
-        temp = learner_stuff[i][0].predict_proba(split_X_test[i])
-        Y_test = np.add(Y_test, temp)
-    Y_test = Y_test / cube_number
-
-    params = {}
-    score = 0
-    SUBMISSION_NAME = "parallel-svc"
-    '''
 
     generate_submission(Y_test, SUBMISSION_NAME, info)
 
