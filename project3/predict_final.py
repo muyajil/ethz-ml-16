@@ -5,6 +5,7 @@ import nibabel as nib
 import src.sPickle as sPickle # -> https://github.com/pgbovine/streaming-pickle
 import sklearn.grid_search as skgs
 import sklearn.svm as sksvm
+from sklearn import tree
 import multiprocessing
 import threading
 from time import time
@@ -205,6 +206,7 @@ def svcRBFGridsearch(X, y, param_grid, prob=True, cl_weight='balanced'):
     print bcolors.UNDERLINE + bcolors.OKBLUE + 'Best Params of Grid Search: ' + str(grid_search.best_params_) + bcolors.ENDC
     return (grid_search.best_estimator_, grid_search.best_params_, grid_search.best_score_)
 
+
 def partial_svc(a):
     return svcRBFGridsearch(a[0], a[1])
 
@@ -236,7 +238,7 @@ def main():
     Y_gender = [y[0] for y in Y_train]
     Y_age = [y[1] for y in Y_train]
     Y_sick = [y[2] for y in Y_train]
-
+    clf = tree.DecisionTreeClassifier()
     # Train models
     print bcolors.HEADER + "Starting to train..." + bcolors.ENDC
     if SUBMISSION_VERSION: # exact parameters for final submission
@@ -246,14 +248,16 @@ def main():
         info = ""
         SUBMISSION_NAME = "finale_submission"
     else:
-        param_grid = [{'C': np.logspace(0,10,10), 'kernel': ['rbf'], 'gamma': np.logspace(-10,-6,10)}]
-        estimator_gender, params_gender, score_gender = svcRBFGridsearch(X_train, Y_gender, param_grid)
-        param_grid = [{'C': np.logspace(0,10,10), 'kernel': ['rbf'], 'gamma': np.logspace(-10,-6,10)}]
-        estimator_age, params_age, score_age = svcRBFGridsearch(X_train, Y_age, param_grid)
-        param_grid = [{'C': np.logspace(0,10,10), 'kernel': ['rbf'], 'gamma': np.logspace(-10,-6,10)}]
-        estimator_sick, params_sick, score_sick = svcRBFGridsearch(X_train, Y_sick, param_grid)
+        
+        clf = clf.fit(X_train, Y_train)
+        #param_grid = [{'C': np.logspace(0,10,10), 'kernel': ['rbf'], 'gamma': np.logspace(-10,-6,10)}]
+        #estimator_gender, params_gender, score_gender = svcRBFGridsearch(X_train, Y_gender, param_grid)
+        #param_grid = [{'C': np.logspace(0,10,10), 'kernel': ['rbf'], 'gamma': np.logspace(-10,-6,10)}]
+        #estimator_age, params_age, score_age = svcRBFGridsearch(X_train, Y_age, param_grid)
+        #param_grid = [{'C': np.logspace(0,10,10), 'kernel': ['rbf'], 'gamma': np.logspace(-10,-6,10)}]
+        #estimator_sick, params_sick, score_sick = svcRBFGridsearch(X_train, Y_sick, param_grid)
 
-        info = generate_name([params_gender, params_age, params_sick], [score_gender, score_age, score_sick])
+        #info = generate_name([params_gender, params_age, params_sick], [score_gender, score_age, score_sick])
 
         # distributed learning
         '''
@@ -274,14 +278,16 @@ def main():
 
     # Make predictions for the test set and write it to a file
     print bcolors.HEADER + "Making predictions.." + bcolors.ENDC
-    Y_test_gender = estimator_gender.predict_proba(X_test)
-    Y_test_age = estimator_age.predict_proba(X_test)
-    Y_test_sick = estimator_sick.predict_proba(X_test)
-    Y_test_gender = np.array(Y_test_gender)[:, 1]
-    Y_test_age = np.array(Y_test_age)[:, 1]
-    Y_test_sick = np.array(Y_test_sick)[:, 1]
-    Y_test = zip(Y_test_gender, Y_test_gender, Y_test_sick)
-
+    #Y_test_gender = estimator_gender.predict_proba(X_test)
+    #Y_test_age = estimator_age.predict_proba(X_test)
+    #Y_test_sick = estimator_sick.predict_proba(X_test)
+    #Y_test_gender = np.array(Y_test_gender)[:, 1]
+    #Y_test_age = np.array(Y_test_age)[:, 1]
+    #Y_test_sick = np.array(Y_test_sick)[:, 1]
+    #Y_test = zip(Y_test_gender, Y_test_gender, Y_test_sick)
+    Y_test = clf.predict(X_test)
+    SUBMISSION_NAME = "decision_trees"
+    info = "geil"
     '''
     # averages the weight vectors to one more reliable weight vector
     X_test = np.array(X_test)
