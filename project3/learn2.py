@@ -31,12 +31,65 @@ mri_width = 176
 
 ffn_1 = 1024
 
+def cubify(examples, cube_factor):
+    num_examples = len(examples)
+    
+    #max_x = len(examples[0, :, :, :])
+    #max_y = len(examples[0, 0, :, :])
+    #max_z = len(examples[0, 0, 0, :])
+
+    (num_examples, max_x, max_y, max_z) = np.shape(examples)
+    print(np.shape(examples))
+
+    x_inter = max_x//cube_factor
+    y_inter = max_y//cube_factor
+    z_inter = max_z//cube_factor
+
+    cubes = np.empty((num_examples*cube_factor, x_inter, y_inter, z_inter))
+
+    idx = 0
+
+    for example in examples:
+        for x in range(cube_factor):
+            for y in range(cube_factor):
+                for z in range(cube_factor):
+                    cube = example[x*x_inter:(x+1)*x_inter, y*y_inter:(y+1)*y_inter, z*y_inter:(z+1)*z_inter]
+                    cubes[idx] = cube
+                    idx+=1
+    print("cubify done")
+    return cubes
+
+def multiply_targets(targets, cube_factor):
+    print(np.shape(targets))
+    (num_examples, dim) = np.shape(targets)
+    y_len = len(targets)*cube_factor**3
+    y = np.empty((y_len, 3))
+    for i in range(num_examples):
+        for j in range(cube_factor**3):
+            y[i*j] = targets[i]
+    return y
+
+def best_prediction(predictions):
+    return predictions[0]
+
+
+def compute_predictions(predictions, cube_factor):
+    num_examples = len(predictions)/cube_factor**3
+
+    pred_new = np.empty((num_examples, 3))
+
+    for i in range(num_examples):
+        preds = predictions[i*cube_factor**3:(i+1)*cube_factor**3]
+        pred_new[i] = best_prediction(preds)
+    return pred_new
+
+
 def load_img(kind, index):
     img = nib.load("set_" + kind + "/" + kind + "_" + str(index) + ".nii")
     (height, width, depth, values) = img.shape
     data = img.get_data()
     X_3d = data[:, :, :, 0]
-    print 'done with img ' + str(index) 
+    print("done with img " + str(index)) 
     return X_3d
 
 def load_img_train(index):
@@ -60,6 +113,27 @@ def weight_variable(shape):
   initial = tf.truncated_normal(shape, stddev=0.1)
   return tf.Variable(initial)
 
+def generate_submission(Y_test, Name="submission", info=""):
+    # Y_test should hold "ID,Sample,Label,Predicted" in one line for every datapoint
+    boolean = {0: "False", 1: "True"}
+    if SUBMISSION_VERSION:
+        filename = "final_sub.csv"
+    else:
+        filename = os.getcwd() + "/" + submission_folder + "/" + str(int(time())) + "_" + PREPROCESSING_NAME + "_" + Name + "_" + info + ".csv"
+
+    if os.path.isfile(filename) and not SUBMISSION_VERSION: # only overrite a previous final_submission, not a normal one
+        generate_submission(Y_test, Name + "1", info) # TODO change name to avoid colisions more elegant
+        return
+    with open(filename, "w") as file:
+        file.write("ID,Sample,Label,Predicted\n")
+        for i in range(len(Y_test)):
+            #TODO check wheter correct index and correct logic
+            file.write(str(3*i) + "," + str(i) + ",gender," + boolean[round(Y_test[i][0])] + "\n")
+            file.write(str(3*i + 1) + "," + str(i) + ",age," + boolean[round(Y_test[i][1])] + "\n")
+            file.write(str(3*i + 2) + "," + str(i) + ",health," + boolean[round(Y_test[i][2])] + "\n")
+        file.close()
+    print("Wrote submission file")
+
 def bias_variable(shape):
   initial = tf.constant(0.1, shape=shape)
   return tf.Variable(initial)
@@ -77,6 +151,13 @@ def main():
     X_train, X_test = load_X()
     y_train = load_y()
 
+    cube_factor = 1
+
+    X_train = cubify(X_train, cube_factor)
+    X_test = cubify(X_test, cube_factor)
+    y_train = multiply_targets(y_train, cube_factor)
+
+    sess = tf.session()
     # print str(np.array(X_train).shape) # = (278, 176, 208, 176)
     # print str(np.array(X_test).shape) # = (138, 176, 208, 176)
     # print str(np.array(y_train).shape) # = (278, 3)
@@ -86,11 +167,11 @@ def main():
 
     # shape = [filter_depth, filter_height, filter_width, in_channels, out_channels]
     W_conv1 = weight_variable([
-		filter1_depth,
-		filter1_height,
-		filter1_width,
-		1,
-		conv1_out])
+        filter1_depth,
+        filter1_height,
+        filter1_width,
+        1,
+        conv1_out])
     b_conv1 = bias_variable([conv1_out])
     # example = W_conv1 = weight_variable([5, 5, 1, 32])
     # example: x_image = tf.reshape(x, [-1,28,28,1])
@@ -99,11 +180,11 @@ def main():
     h_pool1 = max_pool_2x2x2(h_conv1)
 
     W_conv2 = weight_variable([
-		filter2_depth,
-		filter2_height,
-		filter2_width,
-		conv1_out,
-		conv2_out])
+        filter2_depth,
+        filter2_height,
+        filter2_width,
+        conv1_out,
+        conv2_out])
     b_conv2 = bias_variable([conv2_out])
 
     h_conv2 = tf.nn.relu(conv3d(h_pool1, W_conv2) + b_conv2)
@@ -128,10 +209,10 @@ def main():
     # other example (for mutually exclusive classes)
     #y_conv=tf.nn.softmax(tf.matmul(h_fc1_drop, W_fc2) + b_fc2)
     #cross_entropy = tf.reduce_mean(
-    #	-tf.reduce_sum(y_ * tf.log(y_conv), reduction_indices=[1]))
+    #   -tf.reduce_sum(y_ * tf.log(y_conv), reduction_indices=[1]))
 
     y_conv = tf.nn.sigmoid_cross_entropy_with_logits(
-			tf.matmul(h_fc1_drop, W_fc2) + b_fc2, y_)
+            tf.matmul(h_fc1_drop, W_fc2) + b_fc2, y_)
     cross_entropy = tf.reduce_mean(y_conv)
 
     train_step = tf.train.AdamOptimizer(1e-4).minimize(cross_entropy)
@@ -139,11 +220,11 @@ def main():
     correct_prediction = tf.equal(tf.round(y_conv), y_)
 
     accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
-    sess.run(tf.initialize_all_variables())
+    sess.run(tf.global_variables_initializer())
 
     for i in range(20000):
         batch_X = X_train[(i*batch_size)%data_points_train:((i+1)*batch_size)%data_points_train:1,:,:,:]
-	batch_y = y_train[(i*batch_size):((i+1)*batch_size):1,:]
+        batch_y = y_train[(i*batch_size):((i+1)*batch_size):1,:]
         if i%100 == 0:
             train_accuracy = accuracy.eval(feed_dict={x:batch_X, y_: batch_y, keep_prob: 1.0})
             print("step %d, training accuracy %g"%(i, train_accuracy))
