@@ -18,18 +18,18 @@ batch_size = 2
 filter1_width = 4
 filter1_height = 4
 filter1_depth = 4
-conv1_out = 32
+conv1_out = 2
 
 filter2_width = 4
 filter2_height = 4
 filter2_depth = 4
-conv2_out = 64
+conv2_out = 4
 
 mri_depth = 176
 mri_height = 208
 mri_width = 176
 
-ffn_1 = 1024
+ffn_1 = 128
 
 def load_img(kind, index):
     img = nib.load("set_" + kind + "/" + kind + "_" + str(index) + ".nii")
@@ -81,76 +81,80 @@ def main():
     # print str(np.array(X_test).shape) # = (138, 176, 208, 176)
     # print str(np.array(y_train).shape) # = (278, 3)
 
-    x = tf.placeholder(tf.float32, shape=(batch_size, 176, 208, 176, 1))
-    y_ = tf.placeholder(tf.float32, shape=(batch_size, 3))
+    sess = tf.Session()
+    with sess.as_default():
 
-    # shape = [filter_depth, filter_height, filter_width, in_channels, out_channels]
-    W_conv1 = weight_variable([
+      x = tf.placeholder(tf.float32, shape=(batch_size, 176, 208, 176, 1))
+      y_ = tf.placeholder(tf.float32, shape=(batch_size, 3))
+
+      # shape = [filter_depth, filter_height, filter_width, in_channels, out_channels]
+      W_conv1 = weight_variable([
 		filter1_depth,
 		filter1_height,
 		filter1_width,
 		1,
 		conv1_out])
-    b_conv1 = bias_variable([conv1_out])
-    # example = W_conv1 = weight_variable([5, 5, 1, 32])
-    # example: x_image = tf.reshape(x, [-1,28,28,1])
+      b_conv1 = bias_variable([conv1_out])
+      # example = W_conv1 = weight_variable([5, 5, 1, 32])
+      # example: x_image = tf.reshape(x, [-1,28,28,1])
     
-    h_conv1 = tf.nn.relu(conv3d(x, W_conv1) + b_conv1)
-    h_pool1 = max_pool_2x2x2(h_conv1)
+      h_conv1 = tf.nn.relu(conv3d(x, W_conv1) + b_conv1)
+      h_pool1 = max_pool_2x2x2(h_conv1)
 
-    W_conv2 = weight_variable([
+      W_conv2 = weight_variable([
 		filter2_depth,
 		filter2_height,
 		filter2_width,
 		conv1_out,
 		conv2_out])
-    b_conv2 = bias_variable([conv2_out])
+      b_conv2 = bias_variable([conv2_out])
 
-    h_conv2 = tf.nn.relu(conv3d(h_pool1, W_conv2) + b_conv2)
-    h_pool2 = max_pool_2x2x2(h_conv2)
+      h_conv2 = tf.nn.relu(conv3d(h_pool1, W_conv2) + b_conv2)
+      h_pool2 = max_pool_2x2x2(h_conv2)
 
-    # mri size = 176, 208, 176
-    # 2 times 2x2x2 pooling leads to reduced size of 44, 52, 44
-    convsize = (mri_depth/4) * (mri_height/4) * (mri_width/4) * conv2_out
-    W_fc1 = weight_variable([convsize, ffn_1])
-    b_fc1 = bias_variable([ffn_1])
+      # mri size = 176, 208, 176
+      # 2 times 2x2x2 pooling leads to reduced size of 44, 52, 44
+      convsize = (mri_depth/4) * (mri_height/4) * (mri_width/4) * conv2_out
+      W_fc1 = weight_variable([convsize, ffn_1])
+      b_fc1 = bias_variable([ffn_1])
 
-    h_pool2_flat = tf.reshape(h_pool2, [-1, convsize])
+      h_pool2_flat = tf.reshape(h_pool2, [-1, convsize])
 
-    h_fc1 = tf.nn.relu(tf.matmul(h_pool2_flat, W_fc1) + b_fc1)
+      h_fc1 = tf.nn.relu(tf.matmul(h_pool2_flat, W_fc1) + b_fc1)
 
-    keep_prob = tf.placeholder(tf.float32)
-    h_fc1_drop = tf.nn.dropout(h_fc1, keep_prob)
+      keep_prob = tf.placeholder(tf.float32)
+      h_fc1_drop = tf.nn.dropout(h_fc1, keep_prob)
 
-    W_fc2 = weight_variable([ffn_1, 3])
-    b_fc2 = bias_variable([3])
+      W_fc2 = weight_variable([ffn_1, 3])
+      b_fc2 = bias_variable([3])
 
-    # other example (for mutually exclusive classes)
-    #y_conv=tf.nn.softmax(tf.matmul(h_fc1_drop, W_fc2) + b_fc2)
-    #cross_entropy = tf.reduce_mean(
-    #	-tf.reduce_sum(y_ * tf.log(y_conv), reduction_indices=[1]))
+      # other example (for mutually exclusive classes)
+      #y_conv=tf.nn.softmax(tf.matmul(h_fc1_drop, W_fc2) + b_fc2)
+      #cross_entropy = tf.reduce_mean(
+      #	-tf.reduce_sum(y_ * tf.log(y_conv), reduction_indices=[1]))
 
-    y_conv = tf.nn.sigmoid_cross_entropy_with_logits(
-			tf.matmul(h_fc1_drop, W_fc2) + b_fc2, y_)
-    cross_entropy = tf.reduce_mean(y_conv)
+      y_conv = tf.nn.sigmoid_cross_entropy_with_logits(
+	  		tf.matmul(h_fc1_drop, W_fc2) + b_fc2, y_)
+      cross_entropy = tf.reduce_mean(y_conv)
 
-    train_step = tf.train.AdamOptimizer(1e-4).minimize(cross_entropy)
+      train_step = tf.train.AdamOptimizer(1e-4).minimize(cross_entropy)
 
-    correct_prediction = tf.equal(tf.round(y_conv), y_)
+      correct_prediction = tf.equal(tf.round(y_conv), y_)
 
-    accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
-    sess.run(tf.initialize_all_variables())
+      accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
 
-    for i in range(20000):
-        batch_X = X_train[(i*batch_size)%data_points_train:((i+1)*batch_size)%data_points_train:1,:,:,:]
-	batch_y = y_train[(i*batch_size):((i+1)*batch_size):1,:]
-        if i%100 == 0:
-            train_accuracy = accuracy.eval(feed_dict={x:batch_X, y_: batch_y, keep_prob: 1.0})
-            print("step %d, training accuracy %g"%(i, train_accuracy))
-        train_step.run(feed_dict={x: batch_X, y_: batch_y, keep_prob: 0.5})
+      sess.run(tf.initialize_all_variables())
 
-    #print("test accuracy %g"%accuracy.eval(feed_dict={
-    #  x: mnist.test.images, y_: mnist.test.labels, keep_prob: 1.0}))
+      for i in range(20000):
+          batch_X = X_train[(i*batch_size)%data_points_train:((i+1)*batch_size)%data_points_train:1]
+	  batch_y = y_train[(i*batch_size):((i+1)*batch_size):1]
+          if i%100 == 0:
+              train_accuracy = accuracy.eval(feed_dict={x:batch_X, y_: batch_y, keep_prob: 1.0})
+              print("step %d, training accuracy %g"%(i, train_accuracy))
+          train_step.run(feed_dict={x: batch_X, y_: batch_y, keep_prob: 0.5})
+
+      #print("test accuracy %g"%accuracy.eval(feed_dict={
+      #  x: mnist.test.images, y_: mnist.test.labels, keep_prob: 1.0}))
 
 if __name__ == "__main__":
     main()
