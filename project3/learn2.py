@@ -16,21 +16,21 @@ computational_cores = 5
 
 batch_size = 2
 
-filter1_width = 4
-filter1_height = 4
-filter1_depth = 4
+filter1_width = 8
+filter1_height = 8
+filter1_depth = 8
 conv1_out = 2
 
-filter2_width = 4
-filter2_height = 4
-filter2_depth = 4
+filter2_width = 8
+filter2_height = 8
+filter2_depth = 8
 conv2_out = 4
 
 mri_depth = 176
 mri_height = 208
 mri_width = 176
 
-ffn_1 = 128
+ffn_1 = 4
 
 def cubify(examples, cube_factor):
     num_examples = len(examples)
@@ -151,6 +151,8 @@ def main():
 
     # load data
     X_train, X_test = load_X()
+    X_train = np.expand_dims(X_train, axis=4)
+    X_test = np.expand_dims(X_test, axis=4)
     y_train = load_y()
 
     cube_factor = 1
@@ -224,7 +226,8 @@ def main():
 
         accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
 
-        sess.run(tf.initialize_all_variables())
+        init = tf.global_variables_initializer()
+        sess.run(init)
 
         for i in range(20000):
             batch_X = X_train[(i*batch_size)%data_points_train:((i+1)*batch_size)%data_points_train:1]
