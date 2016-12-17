@@ -161,7 +161,7 @@ def main():
 
     sess = tf.Session()
     with sess.as_default():
-        x = tf.placeholder(tf.float32, shape=(batch_size, 176, 208, 176, 1))
+        x = tf.placeholder(tf.float32, shape=(batch_size, 176, 208, 176))
         y_ = tf.placeholder(tf.float32, shape=(batch_size, 3))
 
         # shape = [filter_depth, filter_height, filter_width, in_channels, out_channels]
