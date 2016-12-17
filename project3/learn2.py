@@ -68,7 +68,7 @@ def conv3d(x, W):
   return tf.nn.conv3d(x, W, strides=[1, 1, 1, 1, 1], padding='SAME')
 
 def max_pool_2x2x2(x):
-  return tf.nn.max_pool(x, ksize=[1, 2, 2, 2, 1],
+  return tf.nn.max_pool3d(x, ksize=[1, 2, 2, 2, 1],
                         strides=[1, 2, 2, 2, 1], padding='SAME')
 
 def main():
@@ -81,8 +81,8 @@ def main():
     # print str(np.array(X_test).shape) # = (138, 176, 208, 176)
     # print str(np.array(y_train).shape) # = (278, 3)
 
-    x = tf.placeholder(tf.float32, shape=(batchsize, 176, 208, 176, 1))
-    y_ = tf.placeholder(tf.float32, shape=(278, 3))
+    x = tf.placeholder(tf.float32, shape=(batch_size, 176, 208, 176, 1))
+    y_ = tf.placeholder(tf.float32, shape=(batch_size, 3))
 
     # shape = [filter_depth, filter_height, filter_width, in_channels, out_channels]
     W_conv1 = weight_variable([
@@ -141,11 +141,9 @@ def main():
     accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
     sess.run(tf.initialize_all_variables())
 
-    # he basic slice syntax is i:j:k where i is the starting index, j is the stopping index, and k is the step (k\neq0). 
-
     for i in range(20000):
-        batch_X = X_train[(i*batchsize)%data_points_train:((i+1)*batchsize)%data_points_train:1,:,:,:]
-	batch_y = y_train[(i*batchsize):((i+1)*batchsize):1,:]
+        batch_X = X_train[(i*batch_size)%data_points_train:((i+1)*batch_size)%data_points_train:1,:,:,:]
+	batch_y = y_train[(i*batch_size):((i+1)*batch_size):1,:]
         if i%100 == 0:
             train_accuracy = accuracy.eval(feed_dict={x:batch_X, y_: batch_y, keep_prob: 1.0})
             print("step %d, training accuracy %g"%(i, train_accuracy))
