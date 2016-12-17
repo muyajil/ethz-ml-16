@@ -65,8 +65,11 @@ def multiply_targets(targets, cube_factor):
     return y
 
 def best_prediction(predictions):
-    return predictions[0]
-
+    best = [-1.0,-1.0,-1.0]
+    for prediction in predictions:
+        best[0] = max(best[0], prediction[0])
+        best[1] = max(best[1], prediction[1])
+        best[2] = max(best[2], prediction[2])
 
 def compute_predictions(predictions, cube_factor):
     num_examples = len(predictions)/cube_factor**3
@@ -233,6 +236,11 @@ def main():
 
             #print("test accuracy %g"%accuracy.eval(feed_dict={
             #  x: mnist.test.images, y_: mnist.test.labels, keep_prob: 1.0}))
+        predictions = sess.run(y_conv, {x:X_test})
+
+        final_predictions = compute_predictions(predictions, cube_factor)
+
+        generate_submission(final_predictions, Name="conv_net_test_1")
 
 if __name__ == "__main__":
     main()
