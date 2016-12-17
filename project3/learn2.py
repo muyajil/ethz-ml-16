@@ -33,13 +33,7 @@ mri_width = 176
 ffn_1 = 4
 
 def cubify(examples, cube_factor):
-    num_examples = len(examples)
-    
-    #max_x = len(examples[0, :, :, :])
-    #max_y = len(examples[0, 0, :, :])
-    #max_z = len(examples[0, 0, 0, :])
-
-    (num_examples, max_x, max_y, max_z) = np.shape(examples)
+    (num_examples, max_x, max_y, max_z, content) = np.shape(examples)
     print(np.shape(examples))
 
     x_inter = max_x//cube_factor
@@ -55,7 +49,7 @@ def cubify(examples, cube_factor):
             for y in range(cube_factor):
                 for z in range(cube_factor):
                     cube = example[x*x_inter:(x+1)*x_inter, y*y_inter:(y+1)*y_inter, z*y_inter:(z+1)*z_inter]
-                    cubes[idx] = cube
+                    cubes[idx] = np.squeeze(cube)
                     idx+=1
     print("cubify done")
     return cubes
@@ -115,7 +109,6 @@ def load_y():
     return targets
 
 def weight_variable(shape):
-    shape = map(int, shape)
     initial = tf.truncated_normal(shape, stddev=0.1)
     return tf.Variable(initial)
 
@@ -198,7 +191,7 @@ def main():
 
         # mri size = 176, 208, 176
         # 2 times 2x2x2 pooling leads to reduced size of 44, 52, 44
-        convsize = (mri_depth/4) * (mri_height/4) * (mri_width/4) * conv2_out
+        convsize = int((mri_depth / 4) * (mri_height / 4) * (mri_width / 4) * conv2_out)
         W_fc1 = weight_variable([convsize, ffn_1])
         b_fc1 = bias_variable([ffn_1])
 
