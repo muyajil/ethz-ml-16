@@ -64,7 +64,7 @@ def bias_variable(shape):
   initial = tf.constant(0.1, shape=shape)
   return tf.Variable(initial)
 
-def conv2d(x, W):
+def conv3d(x, W):
   return tf.nn.conv3d(x, W, strides=[1, 1, 1, 1, 1], padding='SAME')
 
 def max_pool_2x2x2(x):
@@ -81,7 +81,7 @@ def main():
     # print str(np.array(X_test).shape) # = (138, 176, 208, 176)
     # print str(np.array(y_train).shape) # = (278, 3)
 
-    x = tf.placeholder(tf.float32, shape=(2, 176, 208, 176, 1))
+    x = tf.placeholder(tf.float32, shape=(batchsize, 176, 208, 176, 1))
     y_ = tf.placeholder(tf.float32, shape=(278, 3))
 
     # shape = [filter_depth, filter_height, filter_width, in_channels, out_channels]
