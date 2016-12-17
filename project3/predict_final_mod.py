@@ -4,8 +4,9 @@ import numpy as np
 import nibabel as nib
 import src.sPickle as sPickle # -> https://github.com/pgbovine/streaming-pickle
 import sklearn.grid_search as skgs
+from sklearn.model_selection import GridSearchCV
 import sklearn.svm as sksvm
-from sklearn import tree
+from sklearn.ensemble import RandomForestClassifier
 import multiprocessing
 import threading
 from time import time
@@ -19,7 +20,7 @@ DEBUG = False
 debug_num = 10
 
 # Feature selection
-cube_number = 7 # 3D cubes are cut into cube_number**3 smaller cubes before further processing
+cube_number = 6 # 3D cubes are cut into cube_number**3 smaller cubes before further processing
 histogram_bins = 50 # number of bins to aggregate histogram
 histogram_range = (1, 4001) # range from minimal to maximal significant data value
 
@@ -62,7 +63,7 @@ def process_img(kind, index):
     X = []
     X_3d = np.array(load_img(kind, index))
 
-    # XXX process img and store in 'X'
+    # process img and store in 'X'
     X_3d = X_3d[x_start:x_end, y_start:y_end, z_start:z_end]
 
     XX, YY, ZZ = X_3d.shape
@@ -130,7 +131,7 @@ def read_targets():
     # returns the list of targets, each target is a list with 3 entries, eg., [[0,1,1],[1,0,1],...]
     # targets represent [1,1,1] for female, yung, healthy, [0,0,0] for male, old, sick
     targets = []
-    with open("data/targets.csv", 'r') as file:
+    with open("targets.csv", 'r') as file:
         targets = [map(int, x.split(',')) for x in file.read().split()]
 
     if DEBUG:
@@ -139,7 +140,6 @@ def read_targets():
 
 def generate_submission(Y_test, Name, info=""):
     # Y_test should hold "ID,Sample,Label,Predicted" in one line for every datapoint
-    #
     boolean = {0: "False", 1: "True"}
     if SUBMISSION_VERSION:
         filename = "final_sub.csv"
@@ -152,11 +152,12 @@ def generate_submission(Y_test, Name, info=""):
     with open(filename, "w") as file:
         file.write("ID,Sample,Label,Predicted\n")
         for i in range(len(Y_test)):
-            file.write(str(3*i) + "," + str(i) + ",gender," + boolean[round(Y_test[i][0])] + "\n") #TODO check wheter correct index and correct logic
-            file.write(str(3*i + 1) + "," + str(i) + ",age," + boolean[round(Y_test[i][1])] + "\n") #TODO check wheter correct index and correct logic
-            file.write(str(3*i + 2) + "," + str(i) + ",health," + boolean[round(Y_test[i][2])] + "\n") #TODO check wheter correct index and correct logic
+            #TODO check wheter correct index and correct logic
+            file.write(str(3*i) + "," + str(i) + ",gender," + boolean[round(Y_test[i][0])] + "\n")
+            file.write(str(3*i + 1) + "," + str(i) + ",age," + boolean[round(Y_test[i][1])] + "\n")
+            file.write(str(3*i + 2) + "," + str(i) + ",health," + boolean[round(Y_test[i][2])] + "\n")
         file.close()
-    print bcolors.OKBLUE + "Wrote submission file '" + filename[len(os.getcwd()) + 1:] + "'." + bcolors.ENDC
+    print bcolors.OKBLUE + "Wrote submission file '" + filename[(len(os.getcwd()) + 1):] + "'." + bcolors.ENDC
 
 def generate_name(params_list, score_list):
     # expects a list of the used parameters and scores in the order [gender, age, health]
@@ -195,9 +196,38 @@ def main():
     X_train = extract_data("train")
     Y_train = read_targets()
 
+#######################################################################################################################
+
+    print str(np.array(X_train).shape)
+    print str(np.array(Y_train).shape)
+
+    param_grid = [{
+	#'n_estimators' :	[5,6,7,8,9,10,11,12,13,14,15],
+	#'criterion' : 		['gini', 'entropy'],
+	#'max_features' :	['auto', 'log2', None, 0.5, 0.8, 0.3],
+	#'max_depth' :		[None],
+	#'min_samples_split' :	[2],
+	#'min_samples_leaf' :	[1],
+	#'class_weight' :	['balanced_subsample', 'balanced', None]
+	}]
+
+    clf = GridSearchCV(RandomForestClassifier(), param_grid, cv=5, verbose=4)
+    clf = RandomForestClassifier()
+    clf.fit(X_train, Y_train)
+
+
+    print 'Best Score of Grid Search: ' + str(clf.best_score_)
+    print 'Best Params of Grid Search: ' + str(clf.best_params_)
+    print 'done'
+
+#######################################################################################################################
+
+    '''
     Y_gender = [y[0] for y in Y_train]
     Y_age = [y[1] for y in Y_train]
     Y_sick = [y[2] for y in Y_train]
+    '''
+
     clf = tree.DecisionTreeClassifier()
     # Train models
     print bcolors.HEADER + "Starting to train..." + bcolors.ENDC
@@ -207,7 +237,7 @@ def main():
         estimator.fit(X_train, Y_train)
         info = ""
         SUBMISSION_NAME = "finale_submission"
-    else:       
+    else:
         clf = clf.fit(X_train, Y_train)
 
     del X_train, Y_train
