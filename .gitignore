@@ -102,3 +102,4 @@ ENV/
 *.csv
 project1/v2/test.py
 *.spickle
+project3/muy/*
