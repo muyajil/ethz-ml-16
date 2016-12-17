@@ -40,7 +40,7 @@ def cubify(examples, cube_factor):
     y_inter = max_y//cube_factor
     z_inter = max_z//cube_factor
 
-    cubes = np.empty((num_examples*cube_factor, x_inter, y_inter, z_inter))
+    cubes = np.empty((num_examples*cube_factor, x_inter, y_inter, z_inter, content))
 
     idx = 0
 
@@ -49,7 +49,7 @@ def cubify(examples, cube_factor):
             for y in range(cube_factor):
                 for z in range(cube_factor):
                     cube = example[x*x_inter:(x+1)*x_inter, y*y_inter:(y+1)*y_inter, z*y_inter:(z+1)*z_inter]
-                    cubes[idx] = np.squeeze(cube)
+                    cubes[idx] = cube
                     idx+=1
     print("cubify done")
     return cubes
@@ -161,7 +161,7 @@ def main():
 
     sess = tf.Session()
     with sess.as_default():
-        x = tf.placeholder(tf.float32, shape=(batch_size, 176, 208, 176))
+        x = tf.placeholder(tf.float32, shape=(batch_size, 176, 208, 176, 1))
         y_ = tf.placeholder(tf.float32, shape=(batch_size, 3))
 
         # shape = [filter_depth, filter_height, filter_width, in_channels, out_channels]
