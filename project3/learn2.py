@@ -115,8 +115,9 @@ def load_y():
     return targets
 
 def weight_variable(shape):
-  initial = tf.truncated_normal(shape, stddev=0.1)
-  return tf.Variable(initial)
+    shape = map(int, shape)
+    initial = tf.truncated_normal(shape, stddev=0.1)
+    return tf.Variable(initial)
 
 def generate_submission(Y_test, Name="submission", info=""):
     # Y_test should hold "ID,Sample,Label,Predicted" in one line for every datapoint
