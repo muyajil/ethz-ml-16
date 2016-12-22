@@ -10,12 +10,15 @@ from time import time
 from multiprocessing import Pool
 import threading
 
-# constants
-data_points_train = 278
-data_points_test = 138
-computational_cores = 5
+cube_factor = 4
+batch_size = cube_factor**3
 
-batch_size = 2
+# constants
+data_points_total = 278
+data_points_test = 138
+data_points_validate = batch_size
+data_points_train = data_points_total - data_points_validate
+computational_cores = 5
 
 filter1_width = 8
 filter1_height = 8
@@ -31,8 +34,7 @@ mri_depth = 176
 mri_height = 208
 mri_width = 176
 
-cube_factor = 4
-batch_size = cube_factor**3
+
 
 ffn_1 = 4
 
@@ -78,7 +80,7 @@ def best_prediction(predictions):
     return best
 
 def compute_predictions(predictions, cube_factor):
-    num_examples = len(predictions)/cube_factor**3
+    num_examples = int(len(predictions)/cube_factor**3)
 
     pred_new = np.empty((num_examples, 3))
 
@@ -104,7 +106,7 @@ def load_img_test(index):
 
 def load_X():
     p = Pool(computational_cores)
-    X_train = p.map(load_img_train, range(1, data_points_train + 1))
+    X_train = p.map(load_img_train, range(1, data_points_total + 1))
     X_test = p.map(load_img_test, range(1, data_points_test + 1))
     return X_train, X_test
 
@@ -151,9 +153,11 @@ def max_pool_2x2x2(x):
                         strides=[1, 2, 2, 2, 1], padding='SAME')
 
 def get_next_batch(batch_size, X_train, y_train):
-    idxs = random.sample(range(0,len(y_train)-1), batch_size)
-    X_batch = [X_train[i] for i in idxs]
-    y_batch = [y_train[i] for i in idxs]
+    idxs = np.random.choice(len(y_train)-1, batch_size, replace=False)
+    X_batch = X_train[idxs]
+    y_batch = y_train[idxs]
+    print(np.shape(X_train))
+    print(np.shape(y_train))
 
     return X_batch, y_batch
 
@@ -165,21 +169,21 @@ def main():
     X_test = np.expand_dims(X_test, axis=4)
     y_train = load_y()
 
-    X_validate = X_train[[0]]
-    X_train = X_train[1:]
+    all_idxs = range(data_points_total)
+    validate_idxs = np.random.choice(data_points_total, data_points_validate, replace=False)
+    train_idxs = np.delete(all_idxs, validate_idxs)
 
-    y_validate = y_train[[0]]
-    y_train = y_train[1:]
+    X_validate = X_train[validate_idxs]
+    X_train = X_train[train_idxs]
+
+    y_validate = y_train[validate_idxs]
+    y_train = y_train[train_idxs]
 
     X_train = cubify(X_train, cube_factor)
     X_test = cubify(X_test, cube_factor)
     X_validate = cubify(X_validate, cube_factor)
     y_validate = multiply_targets(y_validate, cube_factor)
     y_train = multiply_targets(y_train, cube_factor)
-
-    # print str(np.array(X_train).shape) # = (278, 176, 208, 176)
-    # print str(np.array(X_test).shape) # = (138, 176, 208, 176)
-    # print str(np.array(y_train).shape) # = (278, 3)
 
     sess = tf.Session()
     with sess.as_default():
@@ -188,24 +192,26 @@ def main():
 
         # shape = [filter_depth, filter_height, filter_width, in_channels, out_channels]
         W_conv1 = weight_variable([
-        filter1_depth,
-        filter1_height,
-        filter1_width,
-        1,
-        conv1_out])
+            filter1_depth,
+            filter1_height,
+            filter1_width,
+            1,
+            conv1_out
+        ])
+
         b_conv1 = bias_variable([conv1_out])
-        # example = W_conv1 = weight_variable([5, 5, 1, 32])
-        # example: x_image = tf.reshape(x, [-1,28,28,1])
 
         h_conv1 = tf.nn.relu(conv3d(x, W_conv1) + b_conv1)
         h_pool1 = max_pool_2x2x2(h_conv1)
 
         W_conv2 = weight_variable([
-        filter2_depth,
-        filter2_height,
-        filter2_width,
-        conv1_out,
-        conv2_out])
+            filter2_depth,
+            filter2_height,
+            filter2_width,
+            conv1_out,
+            conv2_out
+        ])
+
         b_conv2 = bias_variable([conv2_out])
 
         h_conv2 = tf.nn.relu(conv3d(h_pool1, W_conv2) + b_conv2)
@@ -227,39 +233,39 @@ def main():
         W_fc2 = weight_variable([ffn_1, 3])
         b_fc2 = bias_variable([3])
 
-        # other example (for mutually exclusive classes)
-        #y_conv=tf.nn.softmax(tf.matmul(h_fc1_drop, W_fc2) + b_fc2)
-        #cross_entropy = tf.reduce_mean(
-        #	-tf.reduce_sum(y_ * tf.log(y_conv), reduction_indices=[1]))
+        y_pred = tf.sigmoid(tf.matmul(h_fc1_drop, W_fc2) + b_fc2)
 
-        y_conv = tf.nn.sigmoid_cross_entropy_with_logits(
-            tf.matmul(h_fc1_drop, W_fc2) + b_fc2, y_)
-        cross_entropy = tf.reduce_mean(y_conv)
+        print(y_pred)
+
+        loss = tf.nn.sigmoid_cross_entropy_with_logits(y_pred, y_)
+
+        cross_entropy = tf.reduce_mean(loss)
 
         train_step = tf.train.AdamOptimizer(1e-4).minimize(cross_entropy)
 
-        correct_prediction = tf.equal(tf.round(y_conv), y_)
+        correct_prediction = tf.equal(tf.round(y_pred), y_)
 
         accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
 
         init = tf.global_variables_initializer()
         sess.run(init)
-        prediction = tf.argmax(y_conv, 1)
-        for i in range(1):
-            #batch_X = X_train[(i*batch_size)%data_points_train:((i+1)*batch_size)%data_points_train:1]
-            #batch_y = y_train[(i*batch_size):((i+1)*batch_size):1]
+
+        for i in range(10000):
             batch_X, batch_y = get_next_batch(batch_size, X_train, y_train)
+
             if i%100 == 0:
                 train_accuracy = accuracy.eval(feed_dict={x:batch_X, y_: batch_y, keep_prob: 1.0})
-                validate_accuracy  = accuracy.eval(feed_dict={x:X_validate, y_:y_validate, keep_prob: 1.0})
-                print("step %d, training accuracy %g, validation_accuracy %g"%(i, train_accuracy, validate_accuracy))
+                #validate_accuracy  = accuracy.eval(feed_dict={x:X_validate, y_:y_validate, keep_prob: 1.0})
+                #print("step %d, training accuracy %g, validation_accuracy %g"%(i, train_accuracy, validate_accuracy))
+                print("step %d, training accuracy %g" % (i, train_accuracy))
             train_step.run(feed_dict={x: batch_X, y_: batch_y, keep_prob: 0.5})
 
-        #predictions = prediction.eval(feed_dict={x:X_test})
         predictions = []
+
         for i in range(data_points_test):
-            set = X_test[i*batch_size:(i+1)*batch_size]
-            set_pred = tf.run(y_conv, {x:set})
+            test_set = X_test[i*batch_size:(i+1)*batch_size]
+            #test_set = [X_test[i]]
+            set_pred = y_pred.eval(feed_dict={x:test_set, keep_prob:1.0})
             predictions.extend(set_pred)
 
         final_predictions = compute_predictions(predictions, cube_factor)
