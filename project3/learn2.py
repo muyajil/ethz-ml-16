@@ -40,7 +40,6 @@ ffn_1 = 4
 
 def cubify(examples, cube_factor):
     (num_examples, max_x, max_y, max_z, content) = np.shape(examples)
-    print(np.shape(examples))
 
     x_inter = max_x//cube_factor
     y_inter = max_y//cube_factor
@@ -62,7 +61,6 @@ def cubify(examples, cube_factor):
     return cubes
 
 def multiply_targets(targets, cube_factor):
-    print(np.shape(targets))
     (num_examples, dim) = np.shape(targets)
     y_len = len(targets)*cube_factor**3
     y = np.empty((y_len, 3))
@@ -156,8 +154,6 @@ def get_next_batch(batch_size, X_train, y_train):
     idxs = np.random.choice(len(y_train)-1, batch_size, replace=False)
     X_batch = X_train[idxs]
     y_batch = y_train[idxs]
-    print(np.shape(X_train))
-    print(np.shape(y_train))
 
     return X_batch, y_batch
 
@@ -234,8 +230,6 @@ def main():
         b_fc2 = bias_variable([3])
 
         y_pred = tf.sigmoid(tf.matmul(h_fc1_drop, W_fc2) + b_fc2)
-
-        print(y_pred)
 
         loss = tf.nn.sigmoid_cross_entropy_with_logits(y_pred, y_)
 
