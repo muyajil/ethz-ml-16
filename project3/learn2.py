@@ -3,6 +3,7 @@ import sys
 import numpy as np
 import tensorflow as tf
 import nibabel as nib
+import random
 from time import time
 #import sPickle # -> https://github.com/pgbovine/streaming-pickle
 
@@ -30,6 +31,9 @@ mri_depth = 176
 mri_height = 208
 mri_width = 176
 
+cube_factor = 4
+batch_size = cube_factor**3
+
 ffn_1 = 4
 
 def cubify(examples, cube_factor):
@@ -40,15 +44,16 @@ def cubify(examples, cube_factor):
     y_inter = max_y//cube_factor
     z_inter = max_z//cube_factor
 
-    cubes = np.empty((num_examples*cube_factor, x_inter, y_inter, z_inter, content))
+    cubes = np.empty((num_examples*cube_factor**3, x_inter, y_inter, z_inter, content))
 
     idx = 0
 
     for example in examples:
+        idx = 0
         for x in range(cube_factor):
             for y in range(cube_factor):
                 for z in range(cube_factor):
-                    cube = example[x*x_inter:(x+1)*x_inter, y*y_inter:(y+1)*y_inter, z*y_inter:(z+1)*z_inter]
+                    cube = example[x*x_inter:(x+1)*x_inter, y*y_inter:(y+1)*y_inter, z*z_inter:(z+1)*z_inter]
                     cubes[idx] = cube
                     idx+=1
     print("cubify done")
@@ -70,6 +75,7 @@ def best_prediction(predictions):
         best[0] = max(best[0], prediction[0])
         best[1] = max(best[1], prediction[1])
         best[2] = max(best[2], prediction[2])
+    return best
 
 def compute_predictions(predictions, cube_factor):
     num_examples = len(predictions)/cube_factor**3
@@ -144,6 +150,13 @@ def max_pool_2x2x2(x):
   return tf.nn.max_pool3d(x, ksize=[1, 2, 2, 2, 1],
                         strides=[1, 2, 2, 2, 1], padding='SAME')
 
+def get_next_batch(batch_size, X_train, y_train):
+    idxs = random.sample(range(0,len(y_train)-1), batch_size)
+    X_batch = [X_train[i] for i in idxs]
+    y_batch = [y_train[i] for i in idxs]
+
+    return X_batch, y_batch
+
 def main():
 
     # load data
@@ -152,10 +165,16 @@ def main():
     X_test = np.expand_dims(X_test, axis=4)
     y_train = load_y()
 
-    cube_factor = 1
+    X_validate = X_train[[0]]
+    X_train = X_train[1:]
+
+    y_validate = y_train[[0]]
+    y_train = y_train[1:]
 
     X_train = cubify(X_train, cube_factor)
     X_test = cubify(X_test, cube_factor)
+    X_validate = cubify(X_validate, cube_factor)
+    y_validate = multiply_targets(y_validate, cube_factor)
     y_train = multiply_targets(y_train, cube_factor)
 
     # print str(np.array(X_train).shape) # = (278, 176, 208, 176)
@@ -164,7 +183,7 @@ def main():
 
     sess = tf.Session()
     with sess.as_default():
-        x = tf.placeholder(tf.float32, shape=(batch_size, 176, 208, 176, 1))
+        x = tf.placeholder(tf.float32, shape=(batch_size, int(mri_depth/cube_factor), int(mri_height/cube_factor), int(mri_width/cube_factor), 1))
         y_ = tf.placeholder(tf.float32, shape=(batch_size, 3))
 
         # shape = [filter_depth, filter_height, filter_width, in_channels, out_channels]
@@ -194,7 +213,7 @@ def main():
 
         # mri size = 176, 208, 176
         # 2 times 2x2x2 pooling leads to reduced size of 44, 52, 44
-        convsize = int((mri_depth / 4) * (mri_height / 4) * (mri_width / 4) * conv2_out)
+        convsize = int(((mri_depth/cube_factor) / 4) * ((mri_height/cube_factor) / 4) * ((mri_width/cube_factor) / 4) * conv2_out)
         W_fc1 = weight_variable([convsize, ffn_1])
         b_fc1 = bias_variable([ffn_1])
 
@@ -225,18 +244,23 @@ def main():
 
         init = tf.global_variables_initializer()
         sess.run(init)
-
-        for i in range(20000):
-            batch_X = X_train[(i*batch_size)%data_points_train:((i+1)*batch_size)%data_points_train:1]
-            batch_y = y_train[(i*batch_size):((i+1)*batch_size):1]
+        prediction = tf.argmax(y_conv, 1)
+        for i in range(1):
+            #batch_X = X_train[(i*batch_size)%data_points_train:((i+1)*batch_size)%data_points_train:1]
+            #batch_y = y_train[(i*batch_size):((i+1)*batch_size):1]
+            batch_X, batch_y = get_next_batch(batch_size, X_train, y_train)
             if i%100 == 0:
                 train_accuracy = accuracy.eval(feed_dict={x:batch_X, y_: batch_y, keep_prob: 1.0})
-                print("step %d, training accuracy %g"%(i, train_accuracy))
+                validate_accuracy  = accuracy.eval(feed_dict={x:X_validate, y_:y_validate, keep_prob: 1.0})
+                print("step %d, training accuracy %g, validation_accuracy %g"%(i, train_accuracy, validate_accuracy))
             train_step.run(feed_dict={x: batch_X, y_: batch_y, keep_prob: 0.5})
 
-            #print("test accuracy %g"%accuracy.eval(feed_dict={
-            #  x: mnist.test.images, y_: mnist.test.labels, keep_prob: 1.0}))
-        predictions = sess.run(y_conv, {x:X_test})
+        #predictions = prediction.eval(feed_dict={x:X_test})
+        predictions = []
+        for i in range(data_points_test):
+            set = X_test[i*batch_size:(i+1)*batch_size]
+            set_pred = tf.run(y_conv, {x:set})
+            predictions.extend(set_pred)
 
         final_predictions = compute_predictions(predictions, cube_factor)
 
