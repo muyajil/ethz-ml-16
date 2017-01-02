@@ -203,7 +203,7 @@ def main():
     Y_sick = [y[2] for y in Y_train]
     '''
 
-    clf = tree.DecisionTreeClassifier()
+    clf = tree.RandomForestClassifier(n_estimators=100)
     # Train models
     print bcolors.HEADER + "Starting to train..." + bcolors.ENDC
     if SUBMISSION_VERSION: # exact parameters for final submission
