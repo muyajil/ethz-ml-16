@@ -10,7 +10,7 @@ from time import time
 from multiprocessing import Pool
 import threading
 
-cube_factor = 4
+cube_factor = 1
 batch_size = cube_factor**3
 
 # constants
@@ -20,15 +20,15 @@ data_points_validate = batch_size
 data_points_train = data_points_total - data_points_validate
 computational_cores = 5
 
-filter1_width = 8
-filter1_height = 8
-filter1_depth = 8
-conv1_out = 2
+filter1_width = 16
+filter1_height = 16
+filter1_depth = 16
+conv1_out = 4
 
 filter2_width = 8
 filter2_height = 8
 filter2_depth = 8
-conv2_out = 4
+conv2_out = 8
 
 mri_depth = 176
 mri_height = 208
@@ -36,7 +36,7 @@ mri_width = 176
 
 
 
-ffn_1 = 4
+ffn_1 = 8
 
 def cubify(examples, cube_factor):
     (num_examples, max_x, max_y, max_z, content) = np.shape(examples)
@@ -93,7 +93,7 @@ def load_img(kind, index):
     (height, width, depth, values) = img.shape
     data = img.get_data()
     X_3d = data[:, :, :, 0]
-    print("done with img " + str(index)) 
+    print("done with img " + str(index))
     return X_3d
 
 def load_img_train(index):
@@ -150,6 +150,10 @@ def max_pool_2x2x2(x):
   return tf.nn.max_pool3d(x, ksize=[1, 2, 2, 2, 1],
                         strides=[1, 2, 2, 2, 1], padding='SAME')
 
+def max_pool_4x4x4(x):
+    return tf.nn.max_pool3d(x, ksize=[1, 4, 4, 4, 1],
+                          strides=[1, 4, 4, 4, 1], padding='SAME')
+
 def get_next_batch(batch_size, X_train, y_train):
     idxs = np.random.choice(len(y_train)-1, batch_size, replace=False)
     X_batch = X_train[idxs]
@@ -198,7 +202,7 @@ def main():
         b_conv1 = bias_variable([conv1_out])
 
         h_conv1 = tf.nn.relu(conv3d(x, W_conv1) + b_conv1)
-        h_pool1 = max_pool_2x2x2(h_conv1)
+        h_pool1 = max_pool_4x4x4(h_conv1)
 
         W_conv2 = weight_variable([
             filter2_depth,
@@ -211,11 +215,11 @@ def main():
         b_conv2 = bias_variable([conv2_out])
 
         h_conv2 = tf.nn.relu(conv3d(h_pool1, W_conv2) + b_conv2)
-        h_pool2 = max_pool_2x2x2(h_conv2)
+        h_pool2 = max_pool_4x4x4(h_conv2)
 
         # mri size = 176, 208, 176
-        # 2 times 2x2x2 pooling leads to reduced size of 44, 52, 44
-        convsize = int(((mri_depth/cube_factor) / 4) * ((mri_height/cube_factor) / 4) * ((mri_width/cube_factor) / 4) * conv2_out)
+        # 2 times 4x4x4 pooling leads to reduced size of 11, 13, 11
+        convsize = int(((mri_depth/cube_factor) / 16) * ((mri_height/cube_factor) / 16) * ((mri_width/cube_factor) / 16) * conv2_out)
         W_fc1 = weight_variable([convsize, ffn_1])
         b_fc1 = bias_variable([ffn_1])
 
