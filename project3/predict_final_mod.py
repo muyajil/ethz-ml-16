@@ -7,6 +7,7 @@ import sklearn.grid_search as skgs
 from sklearn.model_selection import GridSearchCV
 import sklearn.svm as sksvm
 from sklearn.ensemble import RandomForestClassifier
+import sklearn.tree as tree # DecisionTreeClassifier
 import multiprocessing
 import threading
 from time import time
@@ -195,32 +196,6 @@ def main():
     print bcolors.HEADER + "Reading traing data.." + bcolors.ENDC
     X_train = extract_data("train")
     Y_train = read_targets()
-
-#######################################################################################################################
-
-    print str(np.array(X_train).shape)
-    print str(np.array(Y_train).shape)
-
-    param_grid = [{
-	#'n_estimators' :	[5,6,7,8,9,10,11,12,13,14,15],
-	#'criterion' : 		['gini', 'entropy'],
-	#'max_features' :	['auto', 'log2', None, 0.5, 0.8, 0.3],
-	#'max_depth' :		[None],
-	#'min_samples_split' :	[2],
-	#'min_samples_leaf' :	[1],
-	#'class_weight' :	['balanced_subsample', 'balanced', None]
-	}]
-
-    clf = GridSearchCV(RandomForestClassifier(), param_grid, cv=5, verbose=4)
-    clf = RandomForestClassifier()
-    clf.fit(X_train, Y_train)
-
-
-    print 'Best Score of Grid Search: ' + str(clf.best_score_)
-    print 'Best Params of Grid Search: ' + str(clf.best_params_)
-    print 'done'
-
-#######################################################################################################################
 
     '''
     Y_gender = [y[0] for y in Y_train]
