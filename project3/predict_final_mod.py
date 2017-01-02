@@ -21,7 +21,7 @@ DEBUG = False
 debug_num = 10
 
 # Feature selection
-cube_number = 6 # 3D cubes are cut into cube_number**3 smaller cubes before further processing
+cube_number = 7 # 3D cubes are cut into cube_number**3 smaller cubes before further processing
 histogram_bins = 50 # number of bins to aggregate histogram
 histogram_range = (1, 4001) # range from minimal to maximal significant data value
 
@@ -54,10 +54,10 @@ class bcolors:
     UNDERLINE = '\033[4m'
 
 def load_img(kind, number):
-    img = nib.load("set_" + kind + "/" + kind + "_" + str(number) + ".nii")
-    (height, width, depth, values) = img.shape
+    img = nib.load("set_" + kind + "/" + kind + "_" + str(number) + "_restore.nii")
+    height, width, depth = img.shape
     data = img.get_data()
-    X_3d = data[:, :, :, 0]
+    X_3d = data[:, :, :]
     return X_3d
 
 def process_img(kind, index):
