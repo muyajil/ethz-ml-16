@@ -18,19 +18,20 @@ ajilm@student.ethz.ch
 svincent@student.ethz.ch
 
 Preprocessing
-crop,none,none
+FSL FAST,none,none
 
 Features
 histogram,bucket,vector
 
 Model
-svc,gridsearch,none
+random forest,none,none
 
 Description
-We first cut off some of the outer space around the brain. Then we devided the
-brain into 3x3x3 blocks and generated a histogram with 50 bins over the range
-[1,4001]. We put each histogram of the blocks after another to receive a single
-vector per brain.
-After the feature selection we trained a RBF support vector classifier on all the
-training examples to gain the estimator. We did a gridsearch for the best
-parameters C and gamma. This yielded our results.
+We first let the FSL FAST algorithm generate MRI images that are corrected for
+bias fields. (https://fsl.fmrib.ox.ac.uk/fsl/fslwiki/FAST)
+After this step, we cut the brain into 8x8x8 cubes, so in total 512 cubes. For
+each of these cubes we generated a histogram, all these histograms
+concatenated build the feature vector for our algorithm.
+
+We used a random forest classifier to solve our multi-label classification
+problem.
