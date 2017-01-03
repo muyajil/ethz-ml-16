@@ -13,12 +13,13 @@ import threading
 from time import time
 
 # Execution flags
-SUBMISSION_VERSION = False # True for final submission -> single prediction file and overrites old!
-computational_cores = 7 # number of workers to process paralizable workload
+SUBMISSION_VERSION = True # True for final submission -> single prediction file and overrites old!
+computational_cores = 4 # number of workers to process paralizable workload
 
 # Debug Flags
 DEBUG = False
 debug_num = 10
+FAST = False
 
 # Feature selection
 cube_number = 8 # 3D cubes are cut into cube_number**3 smaller cubes before further processing
@@ -54,10 +55,16 @@ class bcolors:
     UNDERLINE = '\033[4m'
 
 def load_img(kind, number):
-    img = nib.load("set_" + kind + "/" + kind + "_" + str(number) + "_restore.nii")
+    if FAST:
+        img = nib.load("set_" + kind + "/" + kind + "_" + str(number) + "_restore.nii")
+    else:
+        img = nib.load("set_" + kind + "/" + kind + "_" + str(number) + ".nii")
     height, width, depth = img.shape
     data = img.get_data()
-    X_3d = data[:, :, :]
+    if FAST:
+        X_3d = data[:, :, :]
+    else:
+        X_3d = data[:, :, :, 0]
     return X_3d
 
 def process_img(kind, index):
@@ -132,7 +139,7 @@ def read_targets():
     # returns the list of targets, each target is a list with 3 entries, eg., [[0,1,1],[1,0,1],...]
     # targets represent [1,1,1] for female, yung, healthy, [0,0,0] for male, old, sick
     targets = []
-    with open("targets.csv", 'r') as file:
+    with open("data/targets.csv", 'r') as file:
         targets = [map(int, x.split(',')) for x in file.read().split()]
 
     if DEBUG:
@@ -197,40 +204,28 @@ def main():
     X_train = extract_data("train")
     Y_train = read_targets()
 
-    '''
-    Y_gender = [y[0] for y in Y_train]
-    Y_age = [y[1] for y in Y_train]
-    Y_sick = [y[2] for y in Y_train]
-    '''
-
     clf = RandomForestClassifier(n_estimators=100)
     # Train models
     print bcolors.HEADER + "Starting to train..." + bcolors.ENDC
-    if SUBMISSION_VERSION: # exact parameters for final submission
-        # TODO: old version, need to train 3 classifications!
-        estimator = sksvm.SVC(probability=True, class_weight='balanced', gamma=0.0000000001, C=100, kernel='rbf')
-        estimator.fit(X_train, Y_train)
-        info = ""
-        SUBMISSION_NAME = "finale_submission"
-    else:
-        clf = clf.fit(X_train, Y_train)
+    clf = clf.fit(X_train, Y_train)
 
     del X_train, Y_train
 
     # Extract feature matrix from test set
     print bcolors.HEADER + "Reading test data.." + bcolors.ENDC
+
     X_test = extract_data("test")
 
     # Make predictions for the test set and write it to a file
     print bcolors.HEADER + "Making predictions.." + bcolors.ENDC
 
     Y_test = clf.predict(X_test)
-    SUBMISSION_NAME = "decision_trees"
-    info = "geil"
+    SUBMISSION_NAME = "random_forest"
+    info = "final_submission"
 
     generate_submission(Y_test, SUBMISSION_NAME, info)
 
-    print_done()
+    #print_done()
 
 if __name__ == "__main__":
     main()
