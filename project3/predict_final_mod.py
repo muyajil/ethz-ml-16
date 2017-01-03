@@ -21,7 +21,7 @@ DEBUG = False
 debug_num = 10
 
 # Feature selection
-cube_number = 7 # 3D cubes are cut into cube_number**3 smaller cubes before further processing
+cube_number = 8 # 3D cubes are cut into cube_number**3 smaller cubes before further processing
 histogram_bins = 50 # number of bins to aggregate histogram
 histogram_range = (1, 4001) # range from minimal to maximal significant data value
 
@@ -203,7 +203,7 @@ def main():
     Y_sick = [y[2] for y in Y_train]
     '''
 
-    clf = tree.RandomForestClassifier(n_estimators=100)
+    clf = RandomForestClassifier(n_estimators=100)
     # Train models
     print bcolors.HEADER + "Starting to train..." + bcolors.ENDC
     if SUBMISSION_VERSION: # exact parameters for final submission
