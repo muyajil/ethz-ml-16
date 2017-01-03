@@ -19,7 +19,7 @@ computational_cores = 4 # number of workers to process paralizable workload
 # Debug Flags
 DEBUG = False
 debug_num = 10
-FAST = False
+FAST = True
 
 # Feature selection
 cube_number = 8 # 3D cubes are cut into cube_number**3 smaller cubes before further processing
@@ -29,7 +29,7 @@ histogram_range = (1, 4001) # range from minimal to maximal significant data val
 # constants
 data_points_train = 278 # number of datapoints in train set
 data_points_test = 138 # number of datapoints in test set
-feature_vectors_folder = "Cache" # folder name for intermediate results
+feature_vectors_folder = "src/cache" # folder name for intermediate results
 submission_folder = "Submissions" # folder name for submission files
 
 # constants for cutting unsignificant boundary off of cube
@@ -57,9 +57,10 @@ class bcolors:
 def load_img(kind, number):
     if FAST:
         img = nib.load("set_" + kind + "/" + kind + "_" + str(number) + "_restore.nii")
+        height, width, depth = img.shape
     else:
         img = nib.load("set_" + kind + "/" + kind + "_" + str(number) + ".nii")
-    height, width, depth = img.shape
+        height, width, depth, values = img.shape
     data = img.get_data()
     if FAST:
         X_3d = data[:, :, :]
